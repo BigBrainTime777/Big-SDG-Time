@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDGs RPG - 和平、正義及健全制度</title>
+    <style>
+        /* 全局樣式 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #0a0a1a;
+            color: #fff;
+            overflow: hidden;
+            image-rendering: pixelated;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        }
+        
+        /* 標題欄 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background-color: #16213e;
+            border-bottom: 4px solid #0f3460;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 400;
+            width: 800px;
+        }
+        
+        .game-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #e94560;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        .score {
+            font-size: 18px;
+            color: #f9f9f9;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        /* 遊戲容器 - 固定尺寸800x500 */
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            overflow: hidden;
+            border: 8px solid #0f3460;
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.3);
+            z-index: 1;
+            background-color: #0f0f2d;
+        }
+        
+        /* 星空背景 */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #0a0a1a, #0f0f2d);
+        }
+        
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite ease-in-out;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        /* 地平線 */
+        .horizon {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(to top, #1a1a2e, #0f3460);
+            z-index: 1;
+        }
+        
+        /* 城市天際線 */
+        .skyline {
+            position: absolute;
+            bottom: 180px;
+            left: 0;
+            width: 100%;
+            height: 120px;
+            background-image: 
+                linear-gradient(to right, 
+                    transparent, transparent 10%, 
+                    #533483 10%, #533483 11%, 
+                    transparent 11%, transparent 20%,
+                    #0f3460 20%, #0f3460 22%,
+                    transparent 22%, transparent 30%,
+                    #1a1a2e 30%, #1a1a2e 33%,
+                    transparent 33%, transparent 40%,
+                    #533483 40%, #533483 42%,
+                    transparent 42%, transparent 50%,
+                    #0f3460 50%, #0f3460 53%,
+                    transparent 53%, transparent 60%,
+                    #1a1a2e 60%, #1a1a2e 63%,
+                    transparent 63%, transparent 70%,
+                    #533483 70%, #533483 72%,
+                    transparent 72%, transparent 80%,
+                    #0f3460 80%, #0f3460 83%,
+                    transparent 83%, transparent 90%,
+                    #1a1a2e 90%, #1a1a2e 93%,
+                    transparent 93%, transparent 100%
+                );
+            z-index: 2;
+        }
+        
+        /* 地面紋理 */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 180px;
+            background-color: #1a1a2e;
+            z-index: 3;
+            background-image: 
+                linear-gradient(transparent 95%, rgba(233, 69, 96, 0.1) 95%),
+                linear-gradient(90deg, transparent 95%, rgba(233, 69, 96, 0.1) 95%),
+                linear-gradient(#1a1a2e 1px, transparent 1px),
+                linear-gradient(90deg, #1a1a2e 1px, transparent 1px);
+            background-size: 20px 20px, 20px 20px, 20px 20px, 20px 20px;
+        }
+        
+        /* 建築物 */
+        .building {
+            position: absolute;
+            bottom: 180px;
+            background-color: #533483;
+            border-top: 4px solid #e94560;
+            z-index: 4;
+            box-shadow: inset -5px 0 10px rgba(0,0,0,0.3);
+        }
+        
+        .building::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 10px;
+            top: -14px;
+            background-color: #0f3460;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        
+        .building-detail {
+            position: absolute;
+            background-color: rgba(0,0,0,0.2);
+        }
+        
+        /* 窗戶 */
+        .window {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #f9f9f9;
+            z-index: 5;
+            animation: windowLight 5s infinite;
+            box-shadow: 0 0 5px rgba(249,249,249,0.8);
+        }
+        
+        @keyframes windowLight {
+            0%, 100% { opacity: 0.8; background-color: #f9f9f9; }
+            50% { opacity: 0.2; background-color: #ffeb3b; }
+        }
+        
+        /* 雲朵 */
+        .cloud {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            z-index: 2;
+            filter: blur(1px);
+        }
+        
+        @keyframes cloudMove {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(900px); }
+        }
+        
+        /* 玩家角色 - 笑臉 */
+        #player {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="%234CAF50" stroke="%23338836" stroke-width="2"/><circle cx="11" cy="12" r="2" fill="%23333"/><circle cx="21" cy="12" r="2" fill="%23333"/><path d="M10,20 Q16,25 22,20" stroke="%23333" stroke-width="2" fill="none" stroke-linecap="round"/></svg>');
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 20;
+            transition: all 0.2s ease;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 0 4px rgba(76, 175, 80, 0.7));
+        }
+        
+        /* 敵人角色 - 憤怒臉 */
+        .enemy {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="%23F44336" stroke="%23D32F2F" stroke-width="2"/><circle cx="11" cy="12" r="2" fill="%23333"/><circle cx="21" cy="12" r="2" fill="%23333"/><path d="M10,20 Q16,15 22,20" stroke="%23333" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M12,10 L10,8 M20,10 L22,8" stroke="%23333" stroke-width="2" stroke-linecap="round"/></svg>');
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 10;
+            animation: float 2s infinite ease-in-out;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 0 4px rgba(244, 67, 54, 0.7));
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        /* 問題框 */
+        .question-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(22, 33, 62, 0.95);
+            padding: 25px;
+            border: 6px solid #0f3460;
+            border-radius: 0;
+            z-index: 100;
+            display: none;
+            width: 70%;
+            max-width: 600px;
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+        }
+        
+        .question {
+            margin-bottom: 20px;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #f9f9f9;
+        }
+        
+        .option {
+            display: block;
+            margin: 12px 0;
+            padding: 12px;
+            background-color: rgba(15, 52, 96, 0.8);
+            color: #fff;
+            cursor: pointer;
+            border: 3px solid #e94560;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+        
+        .option:hover {
+            background-color: #e94560;
+            transform: translateX(5px);
+        }
+        
+        /* 結果畫面 */
+        .result-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(22, 33, 62, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            display: none;
+        }
+        
+        .result-message {
+            font-size: 24px;
+            margin-bottom: 40px;
+            text-align: center;
+            line-height: 1.5;
+            color: #e94560;
+            text-shadow: 3px 3px 0 #000;
+            padding: 0 20px;
+        }
+        
+        .next-button, .retry-button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background-color: #e94560;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 3px solid #fff;
+            box-shadow: 5px 5px 0 #000;
+            transition: all 0.2s ease;
+        }
+        
+        .next-button:hover, .retry-button:hover {
+            background-color: #ff6b81;
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 #000;
+        }
+        
+        /* 粒子效果 */
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 15;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #e94560;
+            z-index: 15;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        
+        /* 閃光效果 */
+        .flash {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7);
+            z-index: 150;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        /* 音效控制按鈕 */
+        .sound-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background-color: #0f3460;
+            color: white;
+            border: 2px solid #e94560;
+            cursor: pointer;
+            z-index: 500;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+        }
+        
+        /* 裝飾元素 */
+        .decoration {
+            position: absolute;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="game-title">SDGs 和平、正義及健全制度</div>
+        <div class="score">答對題數: <span id="score">0</span>/7</div>
+    </div>
+    
+    <button class="sound-toggle" id="sound-toggle">音效: 開</button>
+    
+    <div id="game-container">
+        <!-- 星空背景 -->
+        <div class="stars" id="stars"></div>
+        
+        <!-- 地平線 -->
+        <div class="horizon"></div>
+        
+        <!-- 城市天際線 -->
+        <div class="skyline"></div>
+        
+        <!-- 地面 -->
+        <div class="ground"></div>
+        
+        <!-- 玩家角色 -->
+        <div id="player"></div>
+        
+        <!-- 問題框 -->
+        <div class="question-box" id="question-box">
+            <div class="question" id="question"></div>
+            <div class="option" id="option1"></div>
+            <div class="option" id="option2"></div>
+            <div class="option" id="option3"></div>
+            <div class="option" id="option4"></div>
+        </div>
+        
+        <!-- 結果畫面 -->
+        <div class="result-screen" id="result-screen">
+            <div class="result-message" id="result-message"></div>
+            <button class="next-button" id="next-button" style="display: none;">下一關</button>
+            <button class="retry-button" id="retry-button" style="display: none;">重新挑戰</button>
+        </div>
+        
+        <!-- 閃光效果 -->
+        <div class="flash" id="flash"></div>
+    </div>
+    
+    <!-- 音效元素 -->
+    <audio id="bgMusic" loop>
+        <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-668.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="walkSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-footsteps-on-ground-758.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="correctSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="wrongSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-lose-2027.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="enemySound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-creature-monster-snarl-310.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script>
+        // 遊戲變數 - 調整為固定容器尺寸
+        let score = 0;
+        let currentEnemy = null;
+        let answeredQuestions = [];
+        let playerPosition = { 
+            x: 400, // 800px容器中央
+            y: 250  // 500px容器中央
+        };
+        let enemies = [];
+        let lastDirection = 'right';
+        let soundEnabled = true;
+        let lastWalkSoundTime = 0;
+        
+        // 題庫
+        const questions = [
+            {
+                question: "SDG16「和平、正義及健全制度」的主要目標是什麼？",
+                options: [
+                    "促進持久、包容和可持續經濟增長",
+                    "減少國家內部和國家之間的不平等",
+                    "促進和平和包容的社會以實現可持續發展",
+                    "保護、恢復和促進可持續利用陸地生態系統"
+                ],
+                answer: 2
+            },
+            {
+                question: "以下哪項不是SDG16的具體目標？",
+                options: [
+                    "大幅減少一切形式的暴力和相關的死亡率",
+                    "結束對兒童的虐待、剝削、販賣和一切形式的暴力及酷刑",
+                    "在國家和國際層面確保平等機會，減少不平等現象",
+                    "加強相關國家機構，包括通過國際合作，在發展中國家各級建立能力"
+                ],
+                answer: 2
+            },
+            {
+                question: "根據聯合國數據，全球有多少兒童生活在受衝突影響的地區？",
+                options: [
+                    "約1億",
+                    "約2億",
+                    "約3億",
+                    "約4億"
+                ],
+                answer: 3
+            },
+            {
+                question: "什麼是「法治」在SDG16中的重要性？",
+                options: [
+                    "它確保所有人都能獲得免費教育",
+                    "它為所有人提供平等的醫療保健",
+                    "它為所有人提供平等的保護和基本法律權利",
+                    "它保證每個人都能獲得住房"
+                ],
+                answer: 2
+            },
+            {
+                question: "SDG16特別關注哪個弱勢群體的保護？",
+                options: [
+                    "老年人",
+                    "兒童",
+                    "企業家",
+                    "運動員"
+                ],
+                answer: 1
+            },
+            {
+                question: "以下哪個國際組織主要負責促進國際和平與安全？",
+                options: [
+                    "世界衛生組織(WHO)",
+                    "聯合國教科文組織(UNESCO)",
+                    "聯合國安全理事會(UNSC)",
+                    "國際貨幣基金組織(IMF)"
+                ],
+                answer: 2
+            },
+            {
+                question: "什麼是「健全制度」在SDG16中的含義？",
+                options: [
+                    "強大的軍事力量",
+                    "有效、負責和透明的機構",
+                    "大量的經濟資源",
+                    "先進的技術基礎設施"
+                ],
+                answer: 1
+            }
+        ];
+        
+        // 初始化遊戲 - 調整為固定容器尺寸
+        function initGame() {
+            const player = document.getElementById('player');
+            player.style.left = playerPosition.x + 'px';
+            player.style.top = playerPosition.y + 'px';
+            
+            // 創建星空
+            createStars();
+            
+            // 生成敵人和場景裝飾
+            generateEnemies();
+            initSceneDecorations();
+            initDecorations();
+            
+            // 設置控制
+            document.addEventListener('keydown', movePlayer);
+            
+            // 初始化音效
+            initSound();
+            
+            // 更新分數顯示
+            updateScore();
+        }
+        
+        // 創建星空
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const starCount = 100;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.width = Math.random() * 3 + 1 + 'px';
+                star.style.height = star.style.width;
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // 生成敵人 - 調整為固定容器尺寸
+        function generateEnemies() {
+            const gameContainer = document.getElementById('game-container');
+            const enemyCount = 7;
+            
+            for (let i = 0; i < enemyCount; i++) {
+                const enemy = document.createElement('div');
+                enemy.className = 'enemy';
+                
+                // 隨機位置，確保不會與玩家重疊
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * (800 - 40)) + 20;
+                    y = Math.floor(Math.random() * (350 - 40)) + 20; // 只在上部350px區域生成
+                } while (Math.abs(x - playerPosition.x) < 100 && Math.abs(y - playerPosition.y) < 100);
+                
+                enemy.style.left = x + 'px';
+                enemy.style.top = y + 'px';
+                enemy.dataset.index = i;
+                
+                enemy.addEventListener('click', () => startQuestion(i));
+                
+                gameContainer.appendChild(enemy);
+                enemies.push({ element: enemy, x, y, index: i, answered: false });
+            }
+        }
+        
+        // 初始化場景裝飾
+        function initSceneDecorations() {
+            const container = document.getElementById('game-container');
+            
+            // 添加左側建築物
+            const building1 = document.createElement('div');
+            building1.className = 'building';
+            building1.style.left = '100px';
+            building1.style.width = '120px';
+            building1.style.height = '220px';
+            container.appendChild(building1);
+            
+            // 左側建築物細節
+            for (let i = 0; i < 4; i++) {
+                const detail = document.createElement('div');
+                detail.className = 'building-detail';
+                detail.style.left = (105 + (i * 25)) + 'px';
+                detail.style.bottom = '180px';
+                detail.style.width = '20px';
+                detail.style.height = '10px';
+                container.appendChild(detail);
+            }
+            
+            // 添加右側建築物
+            const building2 = document.createElement('div');
+            building2.className = 'building';
+            building2.style.right = '150px';
+            building2.style.width = '80px';
+            building2.style.height = '180px';
+            container.appendChild(building2);
+            
+            // 右側建築物細節
+            for (let i = 0; i < 3; i++) {
+                const detail = document.createElement('div');
+                detail.className = 'building-detail';
+                detail.style.right = (155 + (i * 20)) + 'px';
+                detail.style.bottom = '180px';
+                detail.style.width = '15px';
+                detail.style.height = '8px';
+                container.appendChild(detail);
+            }
+            
+            // 添加窗戶
+            for (let i = 0; i < 5; i++) {
+                for (let j = 0; j < 6; j++) {
+                    const window = document.createElement('div');
+                    window.className = 'window';
+                    window.style.left = (110 + (i * 20)) + 'px';
+                    window.style.bottom = (180 + (j * 25)) + 'px';
+                    window.style.animationDelay = Math.random() * 5 + 's';
+                    container.appendChild(window);
+                }
+            }
+            
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const window = document.createElement('div');
+                    window.className = 'window';
+                    window.style.right = (160 + (i * 20)) + 'px';
+                    window.style.bottom = (180 + (j * 30)) + 'px';
+                    window.style.animationDelay = Math.random() * 5 + 's';
+                    container.appendChild(window);
+                }
+            }
+            
+            // 添加雲朵
+            for (let i = 0; i < 5; i++) {
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud';
+                cloud.style.left = (Math.random() * 700 + 50) + 'px';
+                cloud.style.top = (Math.random() * 150 + 30) + 'px';
+                cloud.style.width = (Math.random() * 100 + 50) + 'px';
+                cloud.style.height = (Math.random() * 20 + 15) + 'px';
+                container.appendChild(cloud);
+                
+                cloud.style.animation = `cloudMove ${Math.random() * 30 + 20}s linear infinite`;
+                cloud.style.animationDelay = `${Math.random() * 10}s`;
+            }
+        }
+        
+        // 初始化裝飾元素
+        function initDecorations() {
+            const container = document.getElementById('game-container');
+            const colors = ['#e94560', '#0f3460', '#533483', '#1a1a2e'];
+            
+            // 地面裝飾
+            for (let i = 0; i < 20; i++) {
+                const decor = document.createElement('div');
+                decor.className = 'decoration';
+                decor.style.width = Math.floor(Math.random() * 20 + 10) + 'px';
+                decor.style.height = Math.floor(Math.random() * 10 + 5) + 'px';
+                decor.style.left = Math.random() * 800 + 'px';
+                decor.style.bottom = '180px';
+                decor.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                decor.style.opacity = Math.random() * 0.5 + 0.3;
+                container.appendChild(decor);
+            }
+        }
+        
+        // 移動玩家 - 調整為固定容器邊界
+        function movePlayer(e) {
+            const player = document.getElementById('player');
+            const speed = 10;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                    playerPosition.y = Math.max(0, playerPosition.y - speed);
+                    lastDirection = 'up';
+                    break;
+                case 'ArrowDown':
+                    playerPosition.y = Math.min(500 - 32, playerPosition.y + speed);
+                    lastDirection = 'down';
+                    break;
+                case 'ArrowLeft':
+                    playerPosition.x = Math.max(0, playerPosition.x - speed);
+                    lastDirection = 'left';
+                    break;
+                case 'ArrowRight':
+                    playerPosition.x = Math.min(800 - 32, playerPosition.x + speed);
+                    lastDirection = 'right';
+                    break;
+            }
+            
+            // 播放腳步聲
+            if (soundEnabled && Date.now() - lastWalkSoundTime > 300) {
+                const walkSound = document.getElementById('walkSound');
+                walkSound.currentTime = 0;
+                walkSound.play().catch(e => console.log('Sound play prevented:', e));
+                lastWalkSoundTime = Date.now();
+            }
+            
+            player.style.left = playerPosition.x + 'px';
+            player.style.top = playerPosition.y + 'px';
+            
+            checkEnemyProximity();
+        }
+        
+        // 檢查玩家是否靠近敵人
+        function checkEnemyProximity() {
+            const proximityDistance = 50;
+            
+            enemies.forEach(enemy => {
+                if (enemy.answered) return;
+                
+                const distance = Math.sqrt(
+                    Math.pow(playerPosition.x - enemy.x, 2) + 
+                    Math.pow(playerPosition.y - enemy.y, 2)
+                );
+                
+                if (distance < proximityDistance) {
+                    startQuestion(enemy.index);
+                }
+            });
+        }
+        
+        // 開始問題
+        function startQuestion(enemyIndex) {
+            if (answeredQuestions.includes(enemyIndex)) return;
+            
+            if (soundEnabled) {
+                const enemySound = document.getElementById('enemySound');
+                enemySound.currentTime = 0;
+                enemySound.play().catch(e => console.log('Sound play prevented:', e));
+            }
+            
+            currentEnemy = enemyIndex;
+            const questionBox = document.getElementById('question-box');
+            const questionElement = document.getElementById('question');
+            const option1 = document.getElementById('option1');
+            const option2 = document.getElementById('option2');
+            const option3 = document.getElementById('option3');
+            const option4 = document.getElementById('option4');
+            
+            const question = questions[enemyIndex];
+            
+            questionElement.textContent = question.question;
+            option1.textContent = question.options[0];
+            option2.textContent = question.options[1];
+            option3.textContent = question.options[2];
+            option4.textContent = question.options[3];
+            
+            option1.onclick = () => checkAnswer(0);
+            option2.onclick = () => checkAnswer(1);
+            option3.onclick = () => checkAnswer(2);
+            option4.onclick = () => checkAnswer(3);
+            
+            questionBox.style.display = 'block';
+        }
+        
+        // 檢查答案
+        function checkAnswer(selectedOption) {
+            const question = questions[currentEnemy];
+            const questionBox = document.getElementById('question-box');
+            
+            if (selectedOption === question.answer) {
+                score++;
+                updateScore();
+                createCelebrationParticles(
+                    playerPosition.x + 16,
+                    playerPosition.y + 16,
+                    10
+                );
+                
+                if (soundEnabled) {
+                    const correctSound = document.getElementById('correctSound');
+                    correctSound.currentTime = 0;
+                    correctSound.play().catch(e => console.log('Sound play prevented:', e));
+                }
+            } else {
+                if (soundEnabled) {
+                    const wrongSound = document.getElementById('wrongSound');
+                    wrongSound.currentTime = 0;
+                    wrongSound.play().catch(e => console.log('Sound play prevented:', e));
+                }
+            }
+            
+            answeredQuestions.push(currentEnemy);
+            questionBox.style.display = 'none';
+            
+            // 敵人消失效果
+            const enemy = enemies[currentEnemy];
+            enemy.answered = true;
+            disappearEnemy(enemy.element);
+            
+            // 檢查遊戲是否結束
+            if (answeredQuestions.length === questions.length) {
+                endGame();
+            }
+        }
+        
+        // 敵人消失效果
+        function disappearEnemy(enemyElement) {
+            const gameContainer = document.getElementById('game-container');
+            const rect = enemyElement.getBoundingClientRect();
+            const containerRect = gameContainer.getBoundingClientRect();
+            
+            const x = rect.left - containerRect.left + 16;
+            const y = rect.top - containerRect.top + 16;
+            
+            // 創建煙霧粒子
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.backgroundColor = `hsl(${Math.random() * 60 + 180}, 70%, 50%)`;
+                
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 50 + 30;
+                const duration = Math.random() * 1 + 0.5;
+                
+                gameContainer.appendChild(particle);
+                
+                setTimeout(() => {
+                    particle.style.transition = `all ${duration}s ease-out`;
+                    particle.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px)`;
+                    particle.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        gameContainer.removeChild(particle);
+                    }, duration * 1000);
+                }, 10);
+            }
+            
+            enemyElement.style.display = 'none';
+        }
+        
+        // 慶祝粒子效果
+        function createCelebrationParticles(x, y, count = 30) {
+            const gameContainer = document.getElementById('game-container');
+            const containerRect = gameContainer.getBoundingClientRect();
+            
+            for (let i = 0; i < count; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = (x || Math.random() * containerRect.width) + 'px';
+                confetti.style.top = (y || Math.random() * containerRect.height) + 'px';
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                
+                gameContainer.appendChild(confetti);
+                
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 100 + 50;
+                const duration = Math.random() * 2 + 1;
+                
+                setTimeout(() => {
+                    confetti.style.transition = `all ${duration}s ease-out`;
+                    confetti.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) rotate(${Math.random() * 360}deg)`;
+                    confetti.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        gameContainer.removeChild(confetti);
+                    }, duration * 1000);
+                }, 10);
+            }
+        }
+        
+        // 更新分數
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+        
+        // 結束遊戲
+        function endGame() {
+            const resultScreen = document.getElementById('result-screen');
+            const resultMessage = document.getElementById('result-message');
+            const nextButton = document.getElementById('next-button');
+            const retryButton = document.getElementById('retry-button');
+            
+            resultScreen.style.display = 'flex';
+            
+            if (score >= 5) {
+                resultMessage.textContent = `恭喜！你答對了 ${score} 題，可以前往下一關！`;
+                nextButton.style.display = 'block';
+                nextButton.onclick = () => {
+                    window.location.href = 'level2.html';
+                };
+            } else {
+                resultMessage.textContent = `你答對了 ${score} 題，未達到通關標準，請重新挑戰！`;
+                retryButton.style.display = 'block';
+                retryButton.onclick = () => {
+                    window.location.reload();
+                };
+            }
+        }
+        
+        // 初始化音效
+        function initSound() {
+            const bgMusic = document.getElementById('bgMusic');
+            const walkSound = document.getElementById('walkSound');
+            const correctSound = document.getElementById('correctSound');
+            const wrongSound = document.getElementById('wrongSound');
+            const enemySound = document.getElementById('enemySound');
+            
+            bgMusic.volume = 0.3;
+            walkSound.volume = 0.2;
+            correctSound.volume = 0.5;
+            wrongSound.volume = 0.5;
+            enemySound.volume = 0.4;
+            
+            // 音效切換按鈕
+            const soundToggle = document.getElementById('sound-toggle');
+            soundToggle.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                soundToggle.textContent = `音效: ${soundEnabled ? '開' : '關'}`;
+                
+                if (soundEnabled) {
+                    bgMusic.play().catch(e => console.log('Autoplay prevented:', e));
+                } else {
+                    bgMusic.pause();
+                }
+            });
+            
+            // 嘗試播放背景音樂（需要用戶交互後才能自動播放）
+            document.addEventListener('click', () => {
+                if (soundEnabled) {
+                    bgMusic.play().catch(e => console.log('Autoplay prevented:', e));
+                }
+            }, { once: true });
+        }
+        
+        // 開始遊戲
+        window.onload = initGame;
+    </script>
+</body>
+</html>

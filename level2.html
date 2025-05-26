@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDGs RPG - 和平守護者</title>
+    <style>
+        /* 優化的像素風基礎樣式 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #0a0a1a;
+            color: #fff;
+            overflow: hidden;
+            image-rendering: pixelated;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        }
+        
+        /* 優化的標題欄 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background-color: #16213e;
+            border-bottom: 4px solid #0f3460;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 400;
+            background-image: 
+                linear-gradient(transparent 95%, rgba(233, 69, 96, 0.1) 95%),
+                linear-gradient(90deg, transparent 95%, rgba(233, 69, 96, 0.1) 95%);
+            background-size: 20px 20px;
+            width: 800px;
+        }
+        
+        .game-title {
+            font-size: 16px;
+            color: #e94560;
+            text-shadow: 2px 2px 0 #000;
+            letter-spacing: 1px;
+        }
+        
+        .score {
+            font-size: 16px;
+            color: #f9f9f9;
+            text-shadow: 2px 2px 0 #000;
+            display: flex;
+            align-items: center;
+        }
+        
+        .score-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            background-color: #e94560;
+            border: 2px solid #f9f9f9;
+            box-shadow: 2px 2px 0 #000;
+        }
+        
+        /* 優化的遊戲容器 */
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            overflow: hidden;
+            border: 8px solid #0f3460;
+            box-shadow: 
+                0 0 0 8px #533483,
+                0 8px 0 8px #0f0f2d,
+                0 0 30px rgba(233, 69, 96, 0.3);
+            background-color: #0f0f2d;
+            z-index: 1;
+        }
+        
+        /* 優化的像素風場景元素 */
+        .pixel-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background-color: #0f0f2d;
+            background-image: 
+                linear-gradient(transparent 95%, rgba(233, 69, 96, 0.1) 95%),
+                linear-gradient(90deg, transparent 95%, rgba(233, 69, 96, 0.1) 95%),
+                linear-gradient(#0f0f2d 1px, transparent 1px),
+                linear-gradient(90deg, #0f0f2d 1px, transparent 1px);
+            background-size: 20px 20px, 20px 20px, 20px 20px, 20px 20px;
+        }
+        
+        .pixel-object {
+            image-rendering: pixelated;
+            position: absolute;
+            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.5));
+        }
+        
+        /* 增強的可點擊物件樣式 */
+        .clickable {
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 1;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            animation: idlePulse 2s infinite ease-in-out;
+        }
+        
+        @keyframes idlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        .clickable:hover {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 8px rgba(233, 69, 96, 0.9));
+            border-color: #e94560;
+            animation: none;
+        }
+        
+        /* 背景建築物樣式 - 整合優化後的版本 */
+        .bg-building {
+            position: absolute;
+            bottom: 150px;
+            background-color: #533483;
+            border-top: 4px solid #0f3460;
+            z-index: 2;
+            box-shadow: inset -5px 0 10px rgba(0,0,0,0.3);
+        }
+        
+        .bg-building::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 10px;
+            top: -14px;
+            background-color: #0f3460;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        
+        .bg-building-detail {
+            position: absolute;
+            background-color: rgba(0,0,0,0.2);
+            z-index: 3;
+        }
+        
+        /* 窗戶 */
+        .window {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #f9f9f9;
+            z-index: 3;
+            animation: windowLight 5s infinite;
+            box-shadow: 0 0 5px rgba(249,249,249,0.8);
+        }
+        
+        @keyframes windowLight {
+            0%, 100% { opacity: 0.8; background-color: #f9f9f9; }
+            50% { opacity: 0.2; background-color: #ffeb3b; }
+        }
+        
+        /* 雲朵 */
+        .cloud {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            z-index: 2;
+            filter: blur(1px);
+        }
+        
+        @keyframes cloudMove {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(900px); }
+        }
+        
+        /* 樹木 */
+        .tree {
+            position: absolute;
+            z-index: 2;
+            bottom: 150px;
+        }
+        
+        /* 地面裝飾 */
+        .ground-decoration {
+            position: absolute;
+            bottom: 150px;
+            z-index: 2;
+            background-color: #1a1a2e;
+            border: 2px solid #0f3460;
+        }
+        
+        /* 優化的對話框 */
+        .dialog-box {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background-color: rgba(22, 33, 62, 0.95);
+            padding: 15px;
+            border: 4px solid #0f3460;
+            z-index: 100;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+            font-size: 12px;
+            line-height: 1.5;
+            border-image: 
+                linear-gradient(
+                    to bottom right,
+                    #0f3460,
+                    #533483
+                ) 1;
+            backdrop-filter: blur(2px);
+        }
+        
+        .dialog-title {
+            color: #e94560;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-shadow: 1px 1px 0 #000;
+        }
+        
+        .dialog-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .dialog-option {
+            padding: 8px;
+            background-color: #0f3460;
+            border: 3px solid #e94560;
+            cursor: pointer;
+            flex-grow: 1;
+            text-align: center;
+            font-size: 10px;
+            transition: all 0.2s;
+        }
+        
+        .dialog-option:hover {
+            background-color: #e94560;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 0 #000;
+        }
+        
+        /* 優化的迷你遊戲 */
+        .pixel-puzzle {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            margin-top: 15px;
+        }
+        
+        .puzzle-piece {
+            width: 40px;
+            height: 40px;
+            background-color: #f9f9f9;
+            border: 2px solid #0f3460;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            color: #0f3460;
+            transition: all 0.3s;
+            box-shadow: 2px 2px 0 #000;
+        }
+        
+        .puzzle-piece:hover {
+            background-color: #e94560;
+            color: white;
+        }
+        
+        .puzzle-piece.correct {
+            background-color: #4CAF50;
+            color: white;
+            transform: scale(0.95);
+        }
+        
+        /* 結果畫面 */
+        .result-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(22, 33, 62, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+            display: none;
+        }
+        
+        .result-message {
+            font-size: 24px;
+            margin-bottom: 40px;
+            text-align: center;
+            line-height: 1.5;
+            color: #e94560;
+            text-shadow: 3px 3px 0 #000;
+            padding: 0 20px;
+        }
+        
+        .next-button, .retry-button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background-color: #e94560;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 3px solid #fff;
+            box-shadow: 5px 5px 0 #000;
+            transition: all 0.2s ease;
+        }
+        
+        .next-button:hover, .retry-button:hover {
+            background-color: #ff6b81;
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 #000;
+        }
+        
+        /* 成就通知 */
+        .achievement-notice {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #533483;
+            padding: 10px 15px;
+            border: 3px solid #e94560;
+            z-index: 200;
+            display: none;
+            box-shadow: 4px 4px 0 #000;
+            animation: slideDown 0.5s forwards;
+        }
+        
+        @keyframes slideDown {
+            0% { top: -100px; opacity: 0; }
+            100% { top: 20px; opacity: 1; }
+        }
+        
+        .achievement-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background-color: #e94560;
+            border: 2px solid #f9f9f9;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        /* 動態背景元素 */
+        .law-icon {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23e94560"><path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm-1.06 13.54L7.4 12l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41-5.64 5.66z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0;
+            z-index: 5;
+            transition: opacity 0.5s;
+        }
+        
+        /* 閃光效果 */
+        .flash {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7);
+            z-index: 150;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        /* 粒子效果 */
+        .confetti {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #e94560;
+            z-index: 15;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        
+        /* 非交互裝飾元素 */
+        .decoration {
+            position: absolute;
+            z-index: 2;
+            image-rendering: pixelated;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="game-title">SDG16 和平守護者</div>
+        <div class="score">
+            <span class="score-icon"></span>
+            <span id="score">0</span>/7
+        </div>
+    </div>
+    
+    <div id="game-container">
+        <!-- 優化的像素背景 -->
+        <div class="pixel-bg"></div>
+        
+        <!-- 優化後的背景建築物 (減少數量並確保不與可點擊物件重疊) -->
+        <!-- 左側建築物 - 遠離可點擊的法院建築(100px) -->
+        <div class="bg-building" style="left:30px;width:60px;height:180px;"></div>
+        
+        <!-- 右側建築物 - 遠離可點擊的法律典籍(500px) -->
+        <div class="bg-building" style="right:30px;width:70px;height:190px;"></div>
+        
+        <!-- 建築物細節 -->
+        <div class="bg-building-detail" style="left:40px;bottom:150px;width:40px;height:8px;"></div>
+        <div class="bg-building-detail" style="right:40px;bottom:150px;width:50px;height:8px;"></div>
+        
+        <!-- 窗戶 (只保留必要的) -->
+        <div class="window" style="left:50px;bottom:220px;"></div>
+        <div class="window" style="left:70px;bottom:220px;"></div>
+        <div class="window" style="right:50px;bottom:230px;"></div>
+        <div class="window" style="right:70px;bottom:230px;"></div>
+        
+        <!-- 雲朵 -->
+        <div class="cloud" style="left:100px;top:50px;width:120px;height:30px;animation:cloudMove 30s linear infinite;"></div>
+        <div class="cloud" style="left:400px;top:80px;width:80px;height:20px;animation:cloudMove 40s linear infinite;animation-delay:5s;"></div>
+        <div class="cloud" style="left:600px;top:60px;width:100px;height:25px;animation:cloudMove 35s linear infinite;animation-delay:10s;"></div>
+        
+        <!-- 樹木 -->
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='48'><path d='M16 5 L20 15 L12 15 Z' fill='%234CAF50'/><path d='M16 15 L20 25 L12 25 Z' fill='%234CAF50'/><path d='M16 25 L20 35 L12 35 Z' fill='%234CAF50'/><rect x='14' y='35' width='4' height='13' fill='%238B4513'/></svg>"
+             class="tree" style="left:20px;">
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='48'><path d='M16 5 L20 15 L12 15 Z' fill='%234CAF50'/><path d='M16 15 L20 25 L12 25 Z' fill='%234CAF50'/><path d='M16 25 L20 35 L12 35 Z' fill='%234CAF50'/><rect x='14' y='35' width='4' height='13' fill='%238B4513'/></svg>"
+             class="tree" style="right:20px;">
+        
+        <!-- 地面裝飾 -->
+        <div class="ground-decoration" style="left:100px;width:20px;height:10px;"></div>
+        <div class="ground-decoration" style="left:220px;width:15px;height:8px;"></div>
+        <div class="ground-decoration" style="left:350px;width:25px;height:12px;"></div>
+        <div class="ground-decoration" style="left:480px;width:18px;height:9px;"></div>
+        <div class="ground-decoration" style="left:600px;width:22px;height:11px;"></div>
+        
+        <!-- 非交互裝飾元素 -->
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><circle cx='16' cy='16' r='14' fill='%23e94560' stroke='%23D32F2F' stroke-width='2'/><path d='M10 16 L22 16 M16 10 L16 22' stroke='%23f9f9f9' stroke-width='2'/></svg>"
+             class="decoration" style="left:400px;bottom:170px;">
+        
+        <!-- 增強的可點擊物件 -->
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='200'><rect width='160' height='200' fill='%23533483'/><rect y='-10' width='160' height='10' fill='%230f3460'/><rect x='20' y='30' width='30' height='30' fill='%23f9f9f9'/><rect x='60' y='30' width='30' height='30' fill='%23f9f9f9'/><rect x='100' y='30' width='30' height='30' fill='%23f9f9f9'/><rect x='20' y='80' width='30' height='30' fill='%23f9f9f9'/><rect x='60' y='80' width='30' height='30' fill='%23f9f9f9'/><rect x='100' y='80' width='30' height='30' fill='%23f9f9f9'/><rect x='20' y='130' width='30' height='30' fill='%23f9f9f9'/><rect x='60' y='130' width='30' height='30' fill='%23f9f9f9'/><rect x='100' y='130' width='30' height='30' fill='%23f9f9f9'/></svg>"
+             class="pixel-object clickable" style="left:100px;bottom:150px;" id="court-building">
+        
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='64'><rect x='12' width='24' height='48' fill='%234CAF50' stroke='%23338836' stroke-width='2'/><circle cx='24' cy='18' r='12' fill='%23FFD700' stroke='%23DAA520' stroke-width='2'/><rect x='18' y='30' width='12' height='18' fill='%23338836'/><path d='M12 48 L36 48 L30 64 L18 64 Z' fill='%23338836'/></svg>"
+             class="pixel-object clickable" style="left:300px;bottom:150px;" id="judge-npc">
+        
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48'><rect width='48' height='48' fill='%23f9f9f9' stroke='%230f3460' stroke-width='2'/><rect x='12' y='8' width='24' height='4' fill='%230f3460'/><rect x='12' y='16' width='24' height='4' fill='%230f3460'/><rect x='12' y='24' width='24' height='4' fill='%230f3460'/><rect x='12' y='32' width='24' height='4' fill='%230f3460'/><rect x='12' y='40' width='24' height='4' fill='%230f3460'/></svg>"
+             class="pixel-object clickable" style="left:500px;bottom:170px;" id="law-book">
+        
+        <!-- 對話框 -->
+        <div class="dialog-box" id="dialog-box" style="display:none;">
+            <div class="dialog-title" id="dialog-title">社區法院</div>
+            <div id="dialog-text"></div>
+            <div class="dialog-options" id="dialog-options"></div>
+        </div>
+        
+        <!-- 迷你遊戲 -->
+        <div class="dialog-box" id="puzzle-game" style="display:none;">
+            <div class="dialog-title">修復法律文件</div>
+            <div>按正確順序點擊字母碎片:</div>
+            <div class="pixel-puzzle" id="puzzle-container"></div>
+        </div>
+        
+        <!-- 成就通知 -->
+        <div class="achievement-notice" id="achievement-notice">
+            <span class="achievement-icon"></span>
+            <span id="achievement-text"></span>
+        </div>
+        
+        <!-- 結果畫面 -->
+        <div class="result-screen" id="result-screen">
+            <div class="result-message" id="result-message"></div>
+            <button class="next-button" id="next-button" style="display: none;">下一關</button>
+            <button class="retry-button" id="retry-button" style="display: none;">重新挑戰</button>
+        </div>
+        
+        <!-- 閃光效果 -->
+        <div class="flash" id="flash"></div>
+    </div>
+    
+    <script>
+        // 遊戲狀態
+        const gameState = {
+            score: 0,
+            currentScene: null,
+            answeredQuestions: 0,
+            achievements: {
+                fastThinker: false,
+                justiceHero: false,
+                puzzleMaster: false,
+                lawExpert: false
+            }
+        };
+        
+        // 場景數據 (擴充為7題)
+        const scenes = {
+            court: {
+                title: "社區法院",
+                description: "你來到社區法院，法官正在審理幾個案件。法院建築莊嚴肅穆，窗戶透出溫暖的燈光。",
+                objects: [
+                    {
+                        id: "judge-npc",
+                        name: "法官",
+                        dialog: "歡迎，和平守護者！我們正面臨幾個需要公正判決的案件。你的智慧將幫助我們建立更健全的司法制度。",
+                        options: [
+                            { text: "我想幫忙審理案件", action: "startCase1" },
+                            { text: "先查看法律文件", action: "readLawBook" },
+                            { text: "參觀法院", action: "exploreCourt" }
+                        ]
+                    },
+                    {
+                        id: "law-book",
+                        name: "法律典籍",
+                        dialog: "這是一部厚重的法律典籍，記載著社區的法規和先例。有些頁面已經破損。",
+                        options: [
+                            { text: "修復法律文件", action: "startPuzzleGame" },
+                            { text: "查閱法律條文", action: "readLaws" },
+                            { text: "返回", action: "closeDialog" }
+                        ]
+                    }
+                ],
+                cases: [
+                    {
+                        question: "居民A指控B偷了他的農具，但沒有直接證據。B說只是借用忘記歸還。你會如何判決？",
+                        options: [
+                            "判B有罪並處罰",
+                            "要求B立即歸還農具",
+                            "建立借用登記制度",
+                            "駁回案件因證據不足"
+                        ],
+                        answer: 2,
+                        explanation: "建立制度能預防未來糾紛，最符合SDG16的健全制度目標。"
+                    },
+                    {
+                        question: "青少年破壞公園設施，父母拒絕賠償，說『孩子還小不懂事』。你會？",
+                        options: [
+                            "強制父母賠償",
+                            "組織社區修復並讓青少年參與",
+                            "免除責任因未成年",
+                            "禁止使用公園設施"
+                        ],
+                        answer: 1,
+                        explanation: "修復式司法能教育青少年並維護社區關係，符合SDG16的和平社會理念。"
+                    },
+                    {
+                        question: "社區內有族群衝突，雙方各執一詞。你會如何處理？",
+                        options: [
+                            "選擇支持人數較多的一方",
+                            "組織對話會議讓雙方溝通",
+                            "請外部專家來裁決",
+                            "暫時擱置問題"
+                        ],
+                        answer: 1,
+                        explanation: "促進對話是解決衝突的最佳方式，符合SDG16的和平社會目標。"
+                    },
+                    {
+                        question: "有人舉報官員貪污，但證據不足。你會？",
+                        options: [
+                            "因證據不足不予理會",
+                            "建立匿名舉報系統",
+                            "公開指責該官員",
+                            "要求舉報者提供更多證據"
+                        ],
+                        answer: 1,
+                        explanation: "健全的舉報制度能有效打擊腐敗，符合SDG16的反腐敗目標。"
+                    },
+                    {
+                        question: "社區資源分配不均，弱勢群體得不到足夠資源。你會？",
+                        options: [
+                            "維持現狀",
+                            "建立公平分配機制",
+                            "讓市場自由決定",
+                            "只提供給貢獻大的人"
+                        ],
+                        answer: 1,
+                        explanation: "公平分配機制能確保所有人獲得基本資源，符合SDG16的平等正義目標。"
+                    },
+                    {
+                        question: "社區決策總是少數人決定，多數人不滿。你會？",
+                        options: [
+                            "維持現有決策模式",
+                            "建立參與式決策機制",
+                            "讓最有經驗的人決定",
+                            "輪流由不同人決定"
+                        ],
+                        answer: 1,
+                        explanation: "參與式決策能提高決策正當性和接受度，符合SDG16的包容性制度目標。"
+                    },
+                    {
+                        question: "法律條文模糊導致解釋空間大，執法不一致。你會？",
+                        options: [
+                            "維持現狀",
+                            "修訂法律使其更明確",
+                            "由執法者自行判斷",
+                            "只處理嚴重案件"
+                        ],
+                        answer: 1,
+                        explanation: "明確的法律條文是健全司法制度的基礎，符合SDG16的法治目標。"
+                    }
+                ],
+                laws: [
+                    "所有居民平等受法律保護",
+                    "公共財產神聖不可侵犯",
+                    "糾紛應優先通過調解解決",
+                    "未成年人犯罪需監護人共同負責"
+                ]
+            }
+        };
+        
+        // 初始化遊戲
+        function initGame() {
+            // 設置點擊事件
+            setupClickEvents();
+            
+            // 進入第一個場景
+            enterScene('court');
+            
+            // 創建動態背景元素
+            createDynamicElements();
+            
+            // 設置結果畫面按鈕
+            document.getElementById('retry-button').addEventListener('click', function() {
+                window.location.reload();
+            });
+            
+            document.getElementById('next-button').addEventListener('click', function() {
+                window.location.href = 'level3.html';
+            });
+        }
+        
+        function createDynamicElements() {
+            // 添加法律圖標到背景
+            for (let i = 0; i < 10; i++) {
+                const icon = document.createElement('div');
+                icon.className = 'law-icon';
+                icon.style.left = `${Math.random() * 750 + 25}px`;
+                icon.style.top = `${Math.random() * 300 + 50}px`;
+                document.getElementById('game-container').appendChild(icon);
+            }
+        }
+        
+        function setupClickEvents() {
+            // 場景對象點擊
+            document.querySelectorAll('.clickable').forEach(obj => {
+                obj.addEventListener('click', function() {
+                    const objectId = this.id;
+                    const scene = scenes[gameState.currentScene];
+                    const objectData = scene.objects.find(o => o.id === objectId);
+                    
+                    if (objectData) {
+                        showDialog(objectData.dialog, objectData.options, scene.title);
+                    }
+                });
+            });
+        }
+        
+        function enterScene(sceneId) {
+            gameState.currentScene = sceneId;
+            const scene = scenes[sceneId];
+            
+            // 更新背景元素顯示
+            updateBackground();
+            
+            // 顯示場景描述
+            showDialog(scene.description, [
+                { text: "開始探索", action: "closeDialog" }
+            ], scene.title);
+        }
+        
+        function updateBackground() {
+            // 根據分數顯示法律圖標
+            const icons = document.querySelectorAll('.law-icon');
+            icons.forEach((icon, index) => {
+                if (index < gameState.score) {
+                    icon.style.opacity = '0.7';
+                } else {
+                    icon.style.opacity = '0';
+                }
+            });
+        }
+        
+        function showDialog(text, options, title = "") {
+            const dialogBox = document.getElementById('dialog-box');
+            const dialogTitle = document.getElementById('dialog-title');
+            const dialogText = document.getElementById('dialog-text');
+            const dialogOptions = document.getElementById('dialog-options');
+            
+            dialogTitle.textContent = title;
+            dialogText.textContent = text;
+            dialogOptions.innerHTML = '';
+            
+            options.forEach(option => {
+                const button = document.createElement('div');
+                button.className = 'dialog-option';
+                button.textContent = option.text;
+                button.addEventListener('click', () => handleDialogAction(option.action));
+                dialogOptions.appendChild(button);
+            });
+            
+            dialogBox.style.display = 'block';
+        }
+        
+        function handleDialogAction(action) {
+            const scene = scenes[gameState.currentScene];
+            
+            switch(action) {
+                case 'closeDialog':
+                    document.getElementById('dialog-box').style.display = 'none';
+                    break;
+                    
+                case 'startCase1':
+                    startCase(0);
+                    break;
+                    
+                case 'startCase2':
+                    startCase(1);
+                    break;
+                    
+                case 'readLawBook':
+                    showDialog("這部法律典籍記載著社區的法規。有些頁面已經破損，需要修復。", [
+                        { text: "修復法律文件", action: "startPuzzleGame" },
+                        { text: "查閱法律條文", action: "readLaws" },
+                        { text: "返回", action: "closeDialog" }
+                    ], "法律典籍");
+                    break;
+                    
+                case 'startPuzzleGame':
+                    startPuzzleGame();
+                    break;
+                    
+                case 'readLaws':
+                    const lawsText = "現行法律條文:\n\n" + scene.laws.join("\n");
+                    showDialog(lawsText, [
+                        { text: "修復法律文件", action: "startPuzzleGame" },
+                        { text: "返回", action: "closeDialog" }
+                    ], "法律條文");
+                    break;
+                    
+                case 'exploreCourt':
+                    showDialog("法院大廳莊嚴肅穆，牆上掛著歷代法官的畫像。右側是法律圖書館，左側是審判廳。", [
+                        { text: "與法官交談", action: "startCase1" },
+                        { text: "前往法律圖書館", action: "readLawBook" },
+                        { text: "參觀審判廳", action: "viewCourtroom" }
+                    ], "法院導覽");
+                    break;
+                    
+                case 'viewCourtroom':
+                    showDialog("審判廳中央是高高的法官席，兩側是原告和被告席。牆上刻著『正義、平等、法治』的格言。", [
+                        { text: "旁聽案件審理", action: "startCase1" },
+                        { text: "返回大廳", action: "exploreCourt" }
+                    ], "審判廳");
+                    break;
+                    
+                // 答案處理
+                case 'answerCase0_0':
+                case 'answerCase0_1':
+                case 'answerCase0_2':
+                case 'answerCase0_3':
+                    handleAnswer(0, parseInt(action.slice(-1)));
+                    break;
+                    
+                case 'answerCase1_0':
+                case 'answerCase1_1':
+                case 'answerCase1_2':
+                case 'answerCase1_3':
+                    handleAnswer(1, parseInt(action.slice(-1)));
+                    break;
+                    
+                case 'answerCase2_0':
+                case 'answerCase2_1':
+                case 'answerCase2_2':
+                case 'answerCase2_3':
+                    handleAnswer(2, parseInt(action.slice(-1)));
+                    break;
+                    
+                case 'answerCase3_0':
+                case 'answerCase3_1':
+                case 'answerCase3_2':
+                case 'answerCase3_3':
+                    handleAnswer(3, parseInt(action.slice(-1)));
+                    break;
+                    
+                case 'answerCase4_0':
+                case 'answerCase4_1':
+                case 'answerCase4_2':
+                case 'answerCase4_3':
+                    handleAnswer(4, parseInt(action.slice(-1)));
+                    break;
+                    
+                case 'answerCase5_0':
+                case 'answerCase5_1':
+                case 'answerCase5_2':
+                case 'answerCase5_3':
+                    handleAnswer(5, parseInt(action.slice(-1)));
+                    break;
+                    
+                case 'answerCase6_0':
+                case 'answerCase6_1':
+                case 'answerCase6_2':
+                case 'answerCase6_3':
+                    handleAnswer(6, parseInt(action.slice(-1)));
+                    break;
+            }
+        }
+        
+        function startCase(caseIndex) {
+            const scene = scenes[gameState.currentScene];
+            const caseData = scene.cases[caseIndex];
+            
+            showDialog(caseData.question, [
+                { text: caseData.options[0], action: `answerCase${caseIndex}_0` },
+                { text: caseData.options[1], action: `answerCase${caseIndex}_1` },
+                { text: caseData.options[2], action: `answerCase${caseIndex}_2` },
+                { text: caseData.options[3], action: `answerCase${caseIndex}_3` }
+            ], "案件審理");
+        }
+        
+        function handleAnswer(caseIndex, optionIndex) {
+            const scene = scenes[gameState.currentScene];
+            const caseData = scene.cases[caseIndex];
+            
+            gameState.answeredQuestions++;
+            
+            if (optionIndex === caseData.answer) {
+                // 正確回答
+                gameState.score++;
+                updateScore();
+                createConfetti();
+                
+                showDialog(`✓ 正確！${caseData.explanation}`, [
+                    { text: "繼續", action: "closeDialog" }
+                ], "判決結果");
+                
+                // 檢查成就
+                if (gameState.score >= 5 && !gameState.achievements.justiceHero) {
+                    unlockAchievement("justiceHero", "正義英雄: 解決5個案件!");
+                }
+            } else {
+                // 錯誤回答
+                showDialog(`✗ 不完全正確。${caseData.explanation}`, [
+                    { text: "我明白了", action: "closeDialog" }
+                ], "判決結果");
+            }
+            
+            // 檢查是否完成所有問題
+            if (gameState.answeredQuestions >= scene.cases.length) {
+                showResult();
+            }
+        }
+        
+        function showResult() {
+            const resultScreen = document.getElementById('result-screen');
+            const resultMessage = document.getElementById('result-message');
+            const nextButton = document.getElementById('next-button');
+            const retryButton = document.getElementById('retry-button');
+            
+            resultScreen.style.display = 'flex';
+            
+            if (gameState.score >= 5) {
+                resultMessage.textContent = `恭喜！你答對了 ${gameState.score} 題，可以前往下一關！`;
+                nextButton.style.display = 'block';
+            } else {
+                resultMessage.textContent = `你答對了 ${gameState.score} 題，未達到通關標準，請重新挑戰！`;
+                retryButton.style.display = 'block';
+            }
+        }
+        
+        function startPuzzleGame() {
+            const puzzleContainer = document.getElementById('puzzle-container');
+            puzzleContainer.innerHTML = '';
+            
+            // 創建拼圖碎片
+            const pieces = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+            pieces.sort(() => Math.random() - 0.5);
+            
+            pieces.forEach((piece, index) => {
+                const pieceElement = document.createElement('div');
+                pieceElement.className = 'puzzle-piece';
+                pieceElement.textContent = piece;
+                pieceElement.addEventListener('click', () => checkPuzzlePiece(piece, pieceElement));
+                puzzleContainer.appendChild(pieceElement);
+            });
+            
+            document.getElementById('puzzle-game').style.display = 'block';
+            document.getElementById('dialog-box').style.display = 'none';
+        }
+        
+        function checkPuzzlePiece(piece, element) {
+            // 簡單檢查 - 按字母順序點擊
+            const nextExpected = String.fromCharCode(65 + document.querySelectorAll('.puzzle-piece.correct').length);
+            
+            if (piece === nextExpected) {
+                element.classList.add('correct');
+                
+                // 檢查是否完成
+                if (document.querySelectorAll('.puzzle-piece.correct').length === 8) {
+                    setTimeout(() => {
+                        document.getElementById('puzzle-game').style.display = 'none';
+                        showDialog("你成功修復了法律文件！社區現在有了更完整的法律參考。", [
+                            { text: "太好了！", action: "closeDialog" }
+                        ], "修復完成");
+                        
+                        if (!gameState.achievements.puzzleMaster) {
+                            unlockAchievement("puzzleMaster", "拼圖大師: 完成法律文件修復!");
+                        }
+                        
+                        // 添加到法律條文
+                        if (scenes.court.laws.length < 6) {
+                            scenes.court.laws.push("法律文件必須妥善保存維護");
+                        }
+                    }, 1000);
+                }
+            } else {
+                // 錯誤選擇
+                element.style.backgroundColor = "#e94560";
+                setTimeout(() => {
+                    element.style.backgroundColor = "#f9f9f9";
+                }, 300);
+            }
+        }
+        
+        function createConfetti() {
+            const container = document.getElementById('game-container');
+            
+            for (let i = 0; i < 20; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = `${Math.random() * 700 + 50}px`;
+                confetti.style.top = `${Math.random() * 400 + 50}px`;
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
+                container.appendChild(confetti);
+                
+                setTimeout(() => {
+                    confetti.style.transition = `all ${Math.random() * 1 + 0.5}s ease-out`;
+                    confetti.style.transform = `translate(${(Math.random() - 0.5) * 200}px, ${Math.random() * 100 + 50}px)`;
+                    confetti.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        container.removeChild(confetti);
+                    }, 1000);
+                }, 10);
+            }
+        }
+        
+        function unlockAchievement(id, text) {
+            gameState.achievements[id] = true;
+            
+            const notice = document.getElementById('achievement-notice');
+            document.getElementById('achievement-text').textContent = text;
+            notice.style.display = 'block';
+            
+            setTimeout(() => {
+                notice.style.display = 'none';
+            }, 3000);
+        }
+        
+        function updateScore() {
+            document.getElementById('score').textContent = gameState.score;
+            updateBackground();
+        }
+        
+        // 啟動遊戲
+        window.onload = initGame;
+    </script>
+</body>
+</html>

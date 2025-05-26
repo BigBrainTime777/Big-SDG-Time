@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDGs RPG - 正義裁決者 第五關</title>
+    <style>
+        /* 基礎樣式 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #0a0a1a;
+            color: #fff;
+            overflow: hidden;
+            image-rendering: pixelated;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background-color: #16213e;
+            border-bottom: 4px solid #0f3460;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 400;
+            background-image: 
+                linear-gradient(transparent 95%, rgba(233, 69, 96, 0.1) 95%),
+                linear-gradient(90deg, transparent 95%, rgba(233, 69, 96, 0.1) 95%);
+            background-size: 20px 20px;
+            width: 800px;
+        }
+        
+        .game-title {
+            font-size: 16px;
+            color: #e94560;
+            text-shadow: 2px 2px 0 #000;
+            letter-spacing: 1px;
+        }
+        
+        .score {
+            font-size: 16px;
+            color: #f9f9f9;
+            text-shadow: 2px 2px 0 #000;
+            display: flex;
+            align-items: center;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            overflow: hidden;
+            border: 8px solid #0f3460;
+            box-shadow: 
+                0 0 0 8px #533483,
+                0 8px 0 8px #0f0f2d,
+                0 0 30px rgba(233, 69, 96, 0.3);
+            background-color: #0f0f2d;
+            z-index: 1;
+        }
+        
+        /* 遊戲場景 */
+        .game-scene {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1534447677768-be436bb09401?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80');
+            background-size: cover;
+            background-position: center;
+            filter: brightness(0.7) contrast(1.2);
+        }
+        
+        /* 大魔王 */
+        .boss {
+            position: absolute;
+            right: 50px;
+            top: 150px;
+            width: 150px;
+            height: 200px;
+            background-color: #e94560;
+            border: 5px solid #533483;
+            border-radius: 50% 50% 0 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.8);
+            z-index: 100;
+        }
+        
+        .boss-health {
+            position: absolute;
+            top: -30px;
+            width: 100%;
+            height: 20px;
+            background-color: #333;
+            border: 2px solid #000;
+        }
+        
+        .boss-health-bar {
+            height: 100%;
+            width: 100%;
+            background-color: #4CAF50;
+            transition: width 0.3s;
+        }
+        
+        .boss-face {
+            font-size: 40px;
+            margin-top: 20px;
+        }
+        
+        .boss-name {
+            position: absolute;
+            bottom: -25px;
+            font-size: 12px;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        /* 玩家角色 */
+        .player {
+            position: absolute;
+            left: 100px;
+            bottom: 50px;
+            width: 60px;
+            height: 80px;
+            background-color: #533483;
+            border: 3px solid #e94560;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            z-index: 200;
+        }
+        
+        .player-face {
+            font-size: 24px;
+        }
+        
+        /* 大砲 */
+        .cannon {
+            position: absolute;
+            bottom: 50px;
+            width: 80px;
+            height: 40px;
+            background-color: #333;
+            border: 3px solid #666;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 150;
+        }
+        
+        .cannon:hover {
+            background-color: #444;
+            transform: translateY(-5px);
+        }
+        
+        .cannon.active {
+            background-color: #e94560;
+            box-shadow: 0 0 10px #e94560;
+        }
+        
+        .cannon.disabled {
+            background-color: #666;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .cannon::before {
+            content: "";
+            position: absolute;
+            left: -20px;
+            width: 20px;
+            height: 10px;
+            background-color: #333;
+        }
+        
+        /* 計時器 */
+        .timer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 20px;
+            color: #e94560;
+            text-shadow: 2px 2px 0 #000;
+            z-index: 300;
+        }
+        
+        /* 問題彈窗 */
+        .question-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            padding: 20px;
+            background-color: #16213e;
+            border: 5px solid #e94560;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            z-index: 500;
+            display: none;
+        }
+        
+        .question-text {
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .answer-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .answer-option {
+            padding: 10px;
+            background-color: #533483;
+            border: 3px solid #e94560;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .answer-option:hover {
+            background-color: #e94560;
+            transform: translateY(-2px);
+        }
+        
+        /* 結果畫面 */
+        .result-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(22, 33, 62, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 400;
+            display: none;
+        }
+        
+        .result-message {
+            font-size: 24px;
+            margin-bottom: 40px;
+            text-align: center;
+            line-height: 1.5;
+            color: #e94560;
+            text-shadow: 3px 3px 0 #000;
+            padding: 0 20px;
+        }
+        
+        .next-button, .retry-button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background-color: #e94560;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 3px solid #fff;
+            box-shadow: 5px 5px 0 #000;
+            transition: all 0.2s ease;
+        }
+        
+        .next-button:hover, .retry-button:hover {
+            background-color: #ff6b81;
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 #000;
+        }
+        
+        /* 砲彈動畫 */
+        @keyframes cannon-shot {
+            0% { transform: translateX(0) translateY(0); opacity: 1; }
+            100% { transform: translateX(500px) translateY(-100px); opacity: 0; }
+        }
+        
+        .cannon-ball {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #e94560;
+            border-radius: 50%;
+            z-index: 180;
+            display: none;
+        }
+        
+        /* 爆炸效果 */
+        @keyframes explosion {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        .explosion {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: #ff9e00;
+            border-radius: 50%;
+            z-index: 190;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="game-title">SDG16 正義裁決者 - 擊敗貪腐大魔王</div>
+        <div class="score">
+            問題: <span id="current-question">0</span>/7
+        </div>
+    </div>
+    
+    <div id="game-container">
+        <div class="game-scene">
+            <div class="timer" id="timer">時間: 60</div>
+            
+            <!-- 貪腐大魔王 -->
+            <div class="boss">
+                <div class="boss-health">
+                    <div class="boss-health-bar" id="boss-health"></div>
+                </div>
+                <div class="boss-face">👿</div>
+                <div class="boss-name">貪腐大魔王</div>
+            </div>
+            
+            <!-- 玩家角色 -->
+            <div class="player">
+                <div class="player-face">😎</div>
+            </div>
+            
+            <!-- 大砲 -->
+            <div class="cannon" data-cannon="1" style="left: 200px;"></div>
+            <div class="cannon" data-cannon="2" style="left: 300px;"></div>
+            <div class="cannon" data-cannon="3" style="left: 400px;"></div>
+            <div class="cannon" data-cannon="4" style="left: 500px;"></div>
+            <div class="cannon" data-cannon="5" style="left: 600px;"></div>
+            <div class="cannon" data-cannon="6" style="left: 250px; bottom: 100px;"></div>
+            <div class="cannon" data-cannon="7" style="left: 450px; bottom: 100px;"></div>
+            
+            <!-- 砲彈 -->
+            <div class="cannon-ball" id="cannon-ball"></div>
+            
+            <!-- 爆炸效果 -->
+            <div class="explosion" id="explosion"></div>
+            
+            <!-- 問題彈窗 -->
+            <div class="question-popup" id="question-popup">
+                <div class="question-text" id="question-text"></div>
+                <div class="answer-options" id="answer-options"></div>
+            </div>
+            
+            <!-- 結果畫面 -->
+            <div class="result-screen" id="result-screen">
+                <div class="result-message" id="result-message"></div>
+                <button class="next-button" id="next-button" style="display: none;">下一關</button>
+                <button class="retry-button" id="retry-button" style="display: none;">重新挑戰</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 遊戲狀態
+        const gameState = {
+            currentQuestion: 0,
+            score: 0,
+            timeLeft: 60,
+            timer: null,
+            cannons: [
+                { id: 1, active: true },
+                { id: 2, active: true },
+                { id: 3, active: true },
+                { id: 4, active: true },
+                { id: 5, active: true },
+                { id: 6, active: true },
+                { id: 7, active: true }
+            ],
+            bossHealth: 7,
+            questions: [
+                {
+                    question: "SDG16的主要目標是什麼？",
+                    options: [
+                        "促進和平與包容的社會",
+                        "消除全球貧困",
+                        "應對氣候變化",
+                        "提高教育質量"
+                    ],
+                    correctAnswer: 0
+                },
+                {
+                    question: "以下哪項不是SDG16的具體目標？",
+                    options: [
+                        "大幅減少所有形式的暴力",
+                        "在國家和國際層面建立法治",
+                        "確保普及負擔得起的能源",
+                        "發展有效、負責和透明的機構"
+                    ],
+                    correctAnswer: 2
+                },
+                {
+                    question: "透明治理的核心是什麼？",
+                    options: [
+                        "政府資訊公開與問責",
+                        "增加稅收",
+                        "擴大政府規模",
+                        "減少公民參與"
+                    ],
+                    correctAnswer: 0
+                },
+                {
+                    question: "法治的基本原則是什麼？",
+                    options: [
+                        "法律面前人人平等",
+                        "政府可以凌駕於法律之上",
+                        "法律只適用於特定群體",
+                        "法律可以隨意更改"
+                    ],
+                    correctAnswer: 0
+                },
+                {
+                    question: "貪腐對社會的主要影響是什麼？",
+                    options: [
+                        "削弱公共信任與經濟發展",
+                        "提高政府效率",
+                        "促進社會平等",
+                        "增加就業機會"
+                    ],
+                    correctAnswer: 0
+                },
+                {
+                    question: "包容性決策的重要性在於？",
+                    options: [
+                        "確保多元聲音參與政策制定",
+                        "加快決策速度",
+                        "減少決策參與者",
+                        "集中權力"
+                    ],
+                    correctAnswer: 0
+                },
+                {
+                    question: "人權保護與SDG16的關係是？",
+                    options: [
+                        "人權保護是SDG16的核心內容",
+                        "與SDG16完全無關",
+                        "只涉及經濟權利",
+                        "僅適用於特定國家"
+                    ],
+                    correctAnswer: 0
+                }
+            ]
+        };
+        
+        // 初始化遊戲
+        function initGame() {
+            // 設置計時器
+            gameState.timer = setInterval(updateTimer, 1000);
+            
+            // 設置大砲點擊事件
+            document.querySelectorAll('.cannon').forEach(cannon => {
+                cannon.addEventListener('click', function() {
+                    if (this.classList.contains('disabled')) return;
+                    
+                    // 標記為活動狀態
+                    this.classList.add('active');
+                    
+                    // 移動玩家到大砲位置
+                    const player = document.querySelector('.player');
+                    const cannonRect = this.getBoundingClientRect();
+                    const gameRect = document.getElementById('game-container').getBoundingClientRect();
+                    
+                    player.style.left = `${cannonRect.left - gameRect.left - 30}px`;
+                    player.style.bottom = `${gameRect.bottom - cannonRect.bottom + 50}px`;
+                    
+                    // 顯示問題
+                    showQuestion(parseInt(this.dataset.cannon) - 1);
+                });
+            });
+            
+            // 設置結果畫面按鈕
+            document.getElementById('retry-button').addEventListener('click', function() {
+                window.location.reload();
+            });
+            
+            document.getElementById('next-button').addEventListener('click', function() {
+                window.location.href = 'ending.html';
+            });
+        }
+        
+        // 更新計時器
+        function updateTimer() {
+            gameState.timeLeft--;
+            document.getElementById('timer').textContent = `時間: ${gameState.timeLeft}`;
+            
+            if (gameState.timeLeft <= 0) {
+                endGame(false);
+            }
+        }
+        
+        // 顯示問題
+        function showQuestion(cannonIndex) {
+            const questionPopup = document.getElementById('question-popup');
+            const questionText = document.getElementById('question-text');
+            const answerOptions = document.getElementById('answer-options');
+            
+            // 設置問題和選項
+            const question = gameState.questions[gameState.currentQuestion];
+            questionText.textContent = question.question;
+            
+            answerOptions.innerHTML = '';
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'answer-option';
+                optionElement.textContent = option;
+                optionElement.dataset.answer = index;
+                optionElement.addEventListener('click', function() {
+                    checkAnswer(parseInt(this.dataset.answer), cannonIndex);
+                });
+                answerOptions.appendChild(optionElement);
+            });
+            
+            // 顯示彈窗
+            questionPopup.style.display = 'block';
+        }
+        
+        // 檢查答案
+        function checkAnswer(selectedAnswer, cannonIndex) {
+            const question = gameState.questions[gameState.currentQuestion];
+            const questionPopup = document.getElementById('question-popup');
+            
+            // 隱藏問題彈窗
+            questionPopup.style.display = 'none';
+            
+            // 移除大砲活動狀態
+            document.querySelector(`.cannon[data-cannon="${cannonIndex + 1}"]`).classList.remove('active');
+            
+            if (selectedAnswer === question.correctAnswer) {
+                // 正確答案
+                gameState.score++;
+                gameState.currentQuestion++;
+                document.getElementById('current-question').textContent = gameState.currentQuestion;
+                
+                // 禁用已使用的大砲
+                document.querySelector(`.cannon[data-cannon="${cannonIndex + 1}"]`).classList.add('disabled');
+                gameState.cannons[cannonIndex].active = false;
+                
+                // 發射砲彈
+                fireCannon(cannonIndex + 1);
+                
+                // 減少大魔王血量
+                gameState.bossHealth--;
+                document.getElementById('boss-health').style.width = `${(gameState.bossHealth / 7) * 100}%`;
+                
+                // 檢查是否擊敗大魔王
+                if (gameState.bossHealth <= 0) {
+                    endGame(true);
+                }
+            } else {
+                // 錯誤答案
+                endGame(false);
+            }
+        }
+        
+        // 發射砲彈
+        function fireCannon(cannonId) {
+            const cannon = document.querySelector(`.cannon[data-cannon="${cannonId}"]`);
+            const cannonBall = document.getElementById('cannon-ball');
+            const explosion = document.getElementById('explosion');
+            
+            const cannonRect = cannon.getBoundingClientRect();
+            const gameRect = document.getElementById('game-container').getBoundingClientRect();
+            
+            // 設置砲彈初始位置
+            const startX = cannonRect.left - gameRect.left + cannonRect.width / 2;
+            const startY = cannonRect.top - gameRect.top;
+            
+            cannonBall.style.left = `${startX}px`;
+            cannonBall.style.top = `${startY}px`;
+            cannonBall.style.display = 'block';
+            
+            // 砲彈動畫
+            cannonBall.style.animation = 'cannon-shot 0.5s forwards';
+            
+            // 砲彈動畫結束後顯示爆炸效果
+            setTimeout(() => {
+                cannonBall.style.display = 'none';
+                cannonBall.style.animation = '';
+                
+                // 設置爆炸位置
+                const boss = document.querySelector('.boss');
+                const bossRect = boss.getBoundingClientRect();
+                
+                explosion.style.left = `${bossRect.left - gameRect.left + bossRect.width / 2}px`;
+                explosion.style.top = `${bossRect.top - gameRect.top + bossRect.height / 2}px`;
+                explosion.style.display = 'block';
+                explosion.style.animation = 'explosion 0.5s forwards';
+                
+                // 爆炸動畫結束後隱藏
+                setTimeout(() => {
+                    explosion.style.display = 'none';
+                    explosion.style.animation = '';
+                }, 500);
+            }, 500);
+        }
+        
+        // 結束遊戲
+        function endGame(isVictory) {
+            clearInterval(gameState.timer);
+            
+            const resultScreen = document.getElementById('result-screen');
+            const resultMessage = document.getElementById('result-message');
+            const nextButton = document.getElementById('next-button');
+            const retryButton = document.getElementById('retry-button');
+            
+            resultScreen.style.display = 'flex';
+            
+            if (isVictory) {
+                resultMessage.textContent = '恭喜！你成功擊敗了貪腐大魔王！正義獲得了勝利！';
+                nextButton.style.display = 'block';
+            } else {
+                resultMessage.textContent = '時間到或回答錯誤！貪腐大魔王仍然猖獗，請重新挑戰！';
+                retryButton.style.display = 'block';
+            }
+        }
+        
+        // 啟動遊戲
+        window.onload = initGame;
+    </script>
+</body>
+</html>

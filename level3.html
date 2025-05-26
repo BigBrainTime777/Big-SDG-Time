@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDGs RPG - 正義裁決者</title>
+    <style>
+        /* 沿用第二關的基礎樣式 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #0a0a1a;
+            color: #fff;
+            overflow: hidden;
+            image-rendering: pixelated;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background-color: #16213e;
+            border-bottom: 4px solid #0f3460;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 400;
+            background-image: 
+                linear-gradient(transparent 95%, rgba(233, 69, 96, 0.1) 95%),
+                linear-gradient(90deg, transparent 95%, rgba(233, 69, 96, 0.1) 95%);
+            background-size: 20px 20px;
+            width: 800px;
+        }
+        
+        .game-title {
+            font-size: 16px;
+            color: #e94560;
+            text-shadow: 2px 2px 0 #000;
+            letter-spacing: 1px;
+        }
+        
+        .score {
+            font-size: 16px;
+            color: #f9f9f9;
+            text-shadow: 2px 2px 0 #000;
+            display: flex;
+            align-items: center;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            overflow: hidden;
+            border: 8px solid #0f3460;
+            box-shadow: 
+                0 0 0 8px #533483,
+                0 8px 0 8px #0f0f2d,
+                0 0 30px rgba(233, 69, 96, 0.3);
+            background-color: #0f0f2d;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 遊戲標題 */
+        .drag-game-title {
+            font-size: 20px;
+            color: #e94560;
+            text-shadow: 3px 3px 0 #000;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        /* 拖曳遊戲區域 */
+        .drag-game-container {
+            display: flex;
+            width: 90%;
+            height: 70%;
+            gap: 20px;
+        }
+        
+        /* 題目區域 */
+        .question-area {
+            flex: 1;
+            background-color: rgba(22, 33, 62, 0.7);
+            border: 4px solid #0f3460;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        
+        .question-title {
+            color: #e94560;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        /* 拖曳項目 */
+        .drag-item {
+            background-color: #533483;
+            border: 3px solid #e94560;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: grab;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+        
+        .drag-item:hover {
+            background-color: #e94560;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 0 #000;
+        }
+        
+        .drag-item.dragging {
+            opacity: 0.5;
+        }
+        
+        /* 答案區域 */
+        .answer-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .drop-zone {
+            flex: 1;
+            background-color: rgba(22, 33, 62, 0.7);
+            border: 4px dashed #0f3460;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100px;
+        }
+        
+        .drop-zone.correct {
+            border-color: #4CAF50;
+        }
+        
+        .drop-zone.incorrect {
+            border-color: #e94560;
+        }
+        
+        .zone-label {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #f9f9f9;
+            text-shadow: 1px 1px 0 #000;
+        }
+        
+        /* 提交按鈕 */
+        .submit-btn {
+            padding: 15px 30px;
+            font-size: 16px;
+            background-color: #e94560;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 3px solid #fff;
+            box-shadow: 5px 5px 0 #000;
+            transition: all 0.2s ease;
+            margin-top: 20px;
+        }
+        
+        .submit-btn:hover {
+            background-color: #ff6b81;
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 #000;
+        }
+        
+        /* 結果畫面 */
+        .result-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(22, 33, 62, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+            display: none;
+        }
+        
+        .result-message {
+            font-size: 24px;
+            margin-bottom: 40px;
+            text-align: center;
+            line-height: 1.5;
+            color: #e94560;
+            text-shadow: 3px 3px 0 #000;
+            padding: 0 20px;
+        }
+        
+        .next-button, .retry-button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background-color: #e94560;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 3px solid #fff;
+            box-shadow: 5px 5px 0 #000;
+            transition: all 0.2s ease;
+        }
+        
+        .next-button:hover, .retry-button:hover {
+            background-color: #ff6b81;
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="game-title">SDG16 正義裁決者</div>
+        <div class="score">
+            <span id="score">0</span>/7
+        </div>
+    </div>
+    
+    <div id="game-container">
+        <div class="drag-game-title">判斷下列行為是否符合SDG16精神</div>
+        
+        <div class="drag-game-container">
+            <!-- 題目區域 -->
+            <div class="question-area" id="question-area">
+                <div class="question-title">請將行為拖曳到正確或錯誤區域</div>
+                <div class="drag-item" draggable="true" data-correct="true">建立社區調解委員會</div>
+                <div class="drag-item" draggable="true" data-correct="false">因種族原因拒絕提供服務</div>
+                <div class="drag-item" draggable="true" data-correct="true">實施匿名舉報貪腐系統</div>
+                <div class="drag-item" draggable="true" data-correct="false">政府決策不公開透明</div>
+                <div class="drag-item" draggable="true" data-correct="true">法律面前人人平等</div>
+                <div class="drag-item" draggable="true" data-correct="false">執法時對不同族群有差別待遇</div>
+                <div class="drag-item" draggable="true" data-correct="true">保護弱勢群體免受暴力侵害</div>
+            </div>
+            
+            <!-- 答案區域 -->
+            <div class="answer-area">
+                <div class="drop-zone correct" id="correct-zone">
+                    <div class="zone-label">符合SDG16</div>
+                </div>
+                <div class="drop-zone incorrect" id="incorrect-zone">
+                    <div class="zone-label">不符合SDG16</div>
+                </div>
+            </div>
+        </div>
+        
+        <button class="submit-btn" id="submit-btn">提交答案</button>
+        
+        <!-- 結果畫面 -->
+        <div class="result-screen" id="result-screen">
+            <div class="result-message" id="result-message"></div>
+            <button class="next-button" id="next-button" style="display: none;">下一關</button>
+            <button class="retry-button" id="retry-button" style="display: none;">重新挑戰</button>
+        </div>
+    </div>
+    
+    <script>
+        // 遊戲狀態
+        const gameState = {
+            score: 0,
+            draggedItems: []
+        };
+        
+        // 初始化遊戲
+        function initGame() {
+            setupDragAndDrop();
+            
+            // 設置提交按鈕
+            document.getElementById('submit-btn').addEventListener('click', checkAnswers);
+            
+            // 設置結果畫面按鈕
+            document.getElementById('retry-button').addEventListener('click', function() {
+                window.location.reload();
+            });
+            
+            document.getElementById('next-button').addEventListener('click', function() {
+                window.location.href = 'level4.html';
+            });
+        }
+        
+        // 設置拖放功能
+        function setupDragAndDrop() {
+            const dragItems = document.querySelectorAll('.drag-item');
+            const dropZones = document.querySelectorAll('.drop-zone');
+            
+            // 為每個可拖曳項目設置事件監聽器
+            dragItems.forEach(item => {
+                item.addEventListener('dragstart', dragStart);
+                item.addEventListener('dragend', dragEnd);
+            });
+            
+            // 為每個放置區域設置事件監聽器
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', dragOver);
+                zone.addEventListener('dragenter', dragEnter);
+                zone.addEventListener('dragleave', dragLeave);
+                zone.addEventListener('drop', drop);
+            });
+        }
+        
+        // 拖曳開始
+        function dragStart(e) {
+            this.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', this.textContent);
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        
+        // 拖曳結束
+        function dragEnd() {
+            this.classList.remove('dragging');
+        }
+        
+        // 拖曳經過放置區域
+        function dragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+        
+        // 進入放置區域
+        function dragEnter(e) {
+            e.preventDefault();
+            this.style.backgroundColor = 'rgba(79, 195, 247, 0.1)';
+        }
+        
+        // 離開放置區域
+        function dragLeave() {
+            this.style.backgroundColor = '';
+        }
+        
+        // 放置項目
+        function drop(e) {
+            e.preventDefault();
+            this.style.backgroundColor = '';
+            
+            const itemText = e.dataTransfer.getData('text/plain');
+            const draggedItem = Array.from(document.querySelectorAll('.drag-item'))
+                .find(item => item.textContent === itemText);
+            
+            if (draggedItem) {
+                // 檢查是否已經被拖曳過
+                if (gameState.draggedItems.includes(draggedItem.textContent)) {
+                    alert('這個項目已經被分類過了！');
+                    return;
+                }
+                
+                // 添加到放置區域
+                const clone = draggedItem.cloneNode(true);
+                clone.classList.remove('drag-item');
+                clone.classList.add('dropped-item');
+                clone.draggable = false;
+                this.appendChild(clone);
+                
+                // 記錄已拖曳項目
+                gameState.draggedItems.push(draggedItem.textContent);
+                
+                // 從原始區域移除
+                draggedItem.style.display = 'none';
+            }
+        }
+        
+        // 檢查答案
+        function checkAnswers() {
+            const correctZone = document.getElementById('correct-zone');
+            const incorrectZone = document.getElementById('incorrect-zone');
+            const allItems = document.querySelectorAll('.drag-item');
+            
+            // 檢查是否所有項目都已分類
+            if (gameState.draggedItems.length < allItems.length) {
+                alert('請先將所有行為分類！');
+                return;
+            }
+            
+            // 計算分數
+            let score = 0;
+            
+            // 檢查正確區域的項目
+            const correctItems = correctZone.querySelectorAll('.dropped-item');
+            correctItems.forEach(item => {
+                const originalItem = Array.from(allItems).find(i => i.textContent === item.textContent);
+                if (originalItem && originalItem.dataset.correct === 'true') {
+                    score++;
+                    item.style.borderColor = '#4CAF50';
+                } else {
+                    item.style.borderColor = '#e94560';
+                }
+            });
+            
+            // 檢查錯誤區域的項目
+            const incorrectItems = incorrectZone.querySelectorAll('.dropped-item');
+            incorrectItems.forEach(item => {
+                const originalItem = Array.from(allItems).find(i => i.textContent === item.textContent);
+                if (originalItem && originalItem.dataset.correct === 'false') {
+                    score++;
+                    item.style.borderColor = '#4CAF50';
+                } else {
+                    item.style.borderColor = '#e94560';
+                }
+            });
+            
+            // 更新分數
+            gameState.score = score;
+            document.getElementById('score').textContent = score;
+            
+            // 顯示結果
+            showResult(score);
+        }
+        
+        // 顯示結果
+        function showResult(score) {
+            const resultScreen = document.getElementById('result-screen');
+            const resultMessage = document.getElementById('result-message');
+            const nextButton = document.getElementById('next-button');
+            const retryButton = document.getElementById('retry-button');
+            
+            resultScreen.style.display = 'flex';
+            
+            if (score >= 5) {
+                resultMessage.textContent = `恭喜！你答對了 ${score} 題，可以前往下一關！`;
+                nextButton.style.display = 'block';
+            } else {
+                resultMessage.textContent = `你答對了 ${score} 題，未達到通關標準，請重新挑戰！`;
+                retryButton.style.display = 'block';
+            }
+        }
+        
+        // 啟動遊戲
+        window.onload = initGame;
+    </script>
+</body>
+</html>

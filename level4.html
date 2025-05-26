@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDGs RPG - 正義裁決者 第四關</title>
+    <style>
+        /* 沿用基礎樣式 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #0a0a1a;
+            color: #fff;
+            overflow: hidden;
+            image-rendering: pixelated;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background-color: #16213e;
+            border-bottom: 4px solid #0f3460;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 400;
+            background-image: 
+                linear-gradient(transparent 95%, rgba(233, 69, 96, 0.1) 95%),
+                linear-gradient(90deg, transparent 95%, rgba(233, 69, 96, 0.1) 95%);
+            background-size: 20px 20px;
+            width: 800px;
+        }
+        
+        .game-title {
+            font-size: 16px;
+            color: #e94560;
+            text-shadow: 2px 2px 0 #000;
+            letter-spacing: 1px;
+        }
+        
+        .score {
+            font-size: 16px;
+            color: #f9f9f9;
+            text-shadow: 2px 2px 0 #000;
+            display: flex;
+            align-items: center;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            overflow: hidden;
+            border: 8px solid #0f3460;
+            box-shadow: 
+                0 0 0 8px #533483,
+                0 8px 0 8px #0f0f2d,
+                0 0 30px rgba(233, 69, 96, 0.3);
+            background-color: #0f0f2d;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 遊戲標題 */
+        .match-game-title {
+            font-size: 20px;
+            color: #e94560;
+            text-shadow: 3px 3px 0 #000;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        /* 連連看遊戲區域 */
+        .match-game-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 90%;
+            height: 70%;
+        }
+        
+        /* 左側和右側項目區域 */
+        .left-items, .right-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        /* 連連看項目 */
+        .match-item {
+            background-color: #533483;
+            border: 3px solid #e94560;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            text-align: center;
+            user-select: none;
+        }
+        
+        .match-item:hover {
+            background-color: #e94560;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 0 #000;
+        }
+        
+        .match-item.selected {
+            background-color: #e94560;
+            border-color: #fff;
+            box-shadow: 0 0 10px #fff;
+        }
+        
+        .match-item.matched {
+            background-color: #4CAF50;
+            border-color: #fff;
+            cursor: default;
+        }
+        
+        .match-item.incorrect {
+            background-color: #e94560;
+            border-color: #fff;
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        
+        /* 連接線 */
+        .connection-line {
+            position: absolute;
+            background-color: #e94560;
+            height: 3px;
+            transform-origin: left center;
+            z-index: -1;
+        }
+        
+        /* 提交按鈕 */
+        .submit-btn {
+            padding: 15px 30px;
+            font-size: 16px;
+            background-color: #e94560;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 3px solid #fff;
+            box-shadow: 5px 5px 0 #000;
+            transition: all 0.2s ease;
+            margin-top: 20px;
+        }
+        
+        .submit-btn:hover {
+            background-color: #ff6b81;
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 #000;
+        }
+        
+        .submit-btn:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 5px 5px 0 #000;
+        }
+        
+        /* 結果畫面 */
+        .result-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(22, 33, 62, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+            display: none;
+        }
+        
+        .result-message {
+            font-size: 24px;
+            margin-bottom: 40px;
+            text-align: center;
+            line-height: 1.5;
+            color: #e94560;
+            text-shadow: 3px 3px 0 #000;
+            padding: 0 20px;
+        }
+        
+        .next-button, .retry-button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background-color: #e94560;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 3px solid #fff;
+            box-shadow: 5px 5px 0 #000;
+            transition: all 0.2s ease;
+        }
+        
+        .next-button:hover, .retry-button:hover {
+            background-color: #ff6b81;
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="game-title">SDG16 正義裁決者 - 連連看</div>
+        <div class="score">
+            <span id="score">0</span>/7
+        </div>
+    </div>
+    
+    <div id="game-container">
+        <div class="match-game-title">將下列概念與其正確描述連接起來</div>
+        
+        <div class="match-game-container">
+            <!-- 左側項目 -->
+            <div class="left-items">
+                <div class="match-item" data-id="1">法治</div>
+                <div class="match-item" data-id="2">透明治理</div>
+                <div class="match-item" data-id="3">人權</div>
+                <div class="match-item" data-id="4">和平社會</div>
+                <div class="match-item" data-id="5">司法正義</div>
+                <div class="match-item" data-id="6">反貪腐</div>
+                <div class="match-item" data-id="7">包容性決策</div>
+            </div>
+            
+            <!-- 右側項目 -->
+            <div class="right-items">
+                <div class="match-item" data-match="1">法律面前人人平等</div>
+                <div class="match-item" data-match="5">公平審判與法律救濟</div>
+                <div class="match-item" data-match="3">所有人應享有的基本自由</div>
+                <div class="match-item" data-match="7">多元聲音參與政策制定</div>
+                <div class="match-item" data-match="2">政府資訊公開與問責</div>
+                <div class="match-item" data-match="6">打擊濫用權力謀取私利</div>
+                <div class="match-item" data-match="4">減少暴力與衝突</div>
+            </div>
+        </div>
+        
+        <button class="submit-btn" id="submit-btn" disabled>提交答案</button>
+        
+        <!-- 結果畫面 -->
+        <div class="result-screen" id="result-screen">
+            <div class="result-message" id="result-message"></div>
+            <button class="next-button" id="next-button" style="display: none;">下一關</button>
+            <button class="retry-button" id="retry-button" style="display: none;">重新挑戰</button>
+        </div>
+    </div>
+    
+    <script>
+        // 遊戲狀態
+        const gameState = {
+            score: 0,
+            selectedItem: null,
+            connections: [],
+            matchedPairs: 0
+        };
+        
+        // 初始化遊戲
+        function initGame() {
+            setupMatchGame();
+            
+            // 設置提交按鈕
+            document.getElementById('submit-btn').addEventListener('click', checkAnswers);
+            
+            // 設置結果畫面按鈕
+            document.getElementById('retry-button').addEventListener('click', function() {
+                window.location.reload();
+            });
+            
+            document.getElementById('next-button').addEventListener('click', function() {
+                window.location.href = 'level5.html';
+            });
+        }
+        
+        // 設置連連看遊戲
+        function setupMatchGame() {
+            const leftItems = document.querySelectorAll('.left-items .match-item');
+            const rightItems = document.querySelectorAll('.right-items .match-item');
+            
+            // 為左側項目添加點擊事件
+            leftItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (this.classList.contains('matched')) return;
+                    
+                    // 取消之前選擇的左側項目
+                    leftItems.forEach(i => i.classList.remove('selected'));
+                    
+                    // 選擇當前項目
+                    this.classList.add('selected');
+                    gameState.selectedItem = {
+                        type: 'left',
+                        element: this,
+                        id: this.dataset.id
+                    };
+                    
+                    // 檢查是否有配對的右側項目被選中
+                    checkForPair();
+                });
+            });
+            
+            // 為右側項目添加點擊事件
+            rightItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (this.classList.contains('matched')) return;
+                    
+                    // 取消之前選擇的右側項目
+                    rightItems.forEach(i => i.classList.remove('selected'));
+                    
+                    // 選擇當前項目
+                    this.classList.add('selected');
+                    gameState.selectedItem = {
+                        type: 'right',
+                        element: this,
+                        id: this.dataset.match
+                    };
+                    
+                    // 檢查是否有配對的左側項目被選中
+                    checkForPair();
+                });
+            });
+        }
+        
+        // 檢查是否有配對
+        function checkForPair() {
+            // 如果沒有選擇任何項目，或只選擇了一個項目，則返回
+            if (!gameState.selectedItem) return;
+            
+            // 找出另一側被選中的項目
+            const leftSelected = document.querySelector('.left-items .match-item.selected');
+            const rightSelected = document.querySelector('.right-items .match-item.selected');
+            
+            // 如果兩側都有被選中的項目
+            if (leftSelected && rightSelected) {
+                // 檢查是否匹配
+                if (leftSelected.dataset.id === rightSelected.dataset.match) {
+                    // 正確匹配
+                    createConnection(leftSelected, rightSelected, true);
+                    
+                    // 標記為已匹配
+                    leftSelected.classList.remove('selected');
+                    leftSelected.classList.add('matched');
+                    rightSelected.classList.remove('selected');
+                    rightSelected.classList.add('matched');
+                    
+                    // 更新已匹配對數
+                    gameState.matchedPairs++;
+                    
+                    // 如果所有項目都匹配了，啟用提交按鈕
+                    if (gameState.matchedPairs === 7) {
+                        document.getElementById('submit-btn').disabled = false;
+                    }
+                } else {
+                    // 錯誤匹配
+                    createConnection(leftSelected, rightSelected, false);
+                    
+                    // 顯示錯誤動畫
+                    leftSelected.classList.add('incorrect');
+                    rightSelected.classList.add('incorrect');
+                    
+                    // 短暫延遲後移除錯誤狀態
+                    setTimeout(() => {
+                        leftSelected.classList.remove('selected', 'incorrect');
+                        rightSelected.classList.remove('selected', 'incorrect');
+                    }, 1000);
+                }
+                
+                // 重置選擇
+                gameState.selectedItem = null;
+            }
+        }
+        
+        // 創建連接線
+        function createConnection(leftItem, rightItem, isCorrect) {
+            const leftRect = leftItem.getBoundingClientRect();
+            const rightRect = rightItem.getBoundingClientRect();
+            const gameContainer = document.getElementById('game-container');
+            const gameRect = gameContainer.getBoundingClientRect();
+            
+            // 計算連接線的起點和終點
+            const startX = leftRect.right - gameRect.left;
+            const startY = leftRect.top + leftRect.height / 2 - gameRect.top;
+            const endX = rightRect.left - gameRect.left;
+            const endY = rightRect.top + rightRect.height / 2 - gameRect.top;
+            
+            // 計算連接線的長度和角度
+            const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+            const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+            
+            // 創建連接線元素
+            const line = document.createElement('div');
+            line.className = 'connection-line';
+            line.style.width = `${length}px`;
+            line.style.left = `${startX}px`;
+            line.style.top = `${startY}px`;
+            line.style.transform = `rotate(${angle}deg)`;
+            line.style.backgroundColor = isCorrect ? '#4CAF50' : '#e94560';
+            
+            // 添加到遊戲容器
+            gameContainer.appendChild(line);
+            
+            // 保存連接線
+            gameState.connections.push(line);
+        }
+        
+        // 檢查答案
+        function checkAnswers() {
+            // 計算分數 (每條綠色連接線得1分)
+            const correctConnections = document.querySelectorAll('.connection-line[style*="rgb(76, 175, 80)"]');
+            gameState.score = correctConnections.length;
+            document.getElementById('score').textContent = gameState.score;
+            
+            // 顯示結果
+            showResult(gameState.score);
+        }
+        
+        // 顯示結果
+        function showResult(score) {
+            const resultScreen = document.getElementById('result-screen');
+            const resultMessage = document.getElementById('result-message');
+            const nextButton = document.getElementById('next-button');
+            const retryButton = document.getElementById('retry-button');
+            
+            resultScreen.style.display = 'flex';
+            
+            if (score >= 5) {
+                resultMessage.textContent = `恭喜！你答對了 ${score} 題，可以前往下一關！`;
+                nextButton.style.display = 'block';
+            } else {
+                resultMessage.textContent = `你答對了 ${score} 題，未達到通關標準，請重新挑戰！`;
+                retryButton.style.display = 'block';
+            }
+        }
+        
+        // 啟動遊戲
+        window.onload = initGame;
+    </script>
+</body>
+</html>
