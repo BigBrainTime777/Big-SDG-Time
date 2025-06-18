@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDGs RPG - 正義裁決者 第三關</title>
+    <style>
+        /* 沿用基礎樣式，允許頁面滾動 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100vh; /* 允許內容推動高度，確保可滾動 */
+            font-family: 'Press Start 2P', cursive;
+            background-color: #0a0a1a;
+            color: #fff;
+            overflow-x: hidden; /* 防止水平滾動 */
+            overflow-y: auto;   /* 允許垂直滾動 */
+            image-rendering: pixelated;
+        }
+        
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        }
+        
+        /* 優化的標題欄 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center; /* 垂直居中對齊項目 */
+            padding: 10px 20px;
+            background-color: #16213e;
+            border-bottom: 4px solid #0f3460;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 400;
+            width: 90%; /* 響應式寬度 */
+            max-width: 960px; /* 最大寬度 */
+            box-sizing: border-box;
+            background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            flex-wrap: wrap; /* 允許換行以適應小螢幕 */
+            gap: 10px; /* 項目之間的間距 */
+            margin: 20px auto 0 auto; /* 確保頭部也居中並有頂部間距 */
+            border-top-left-radius: 8px; /* 新增圓角 */
+            border-top-right-radius: 8px; /* 新增圓角 */
+        }
+
+        .game-title {
+            font-size: 20px;
+            color: #e94560;
+            text-shadow: 2px 2px 0 #000;
+            flex-grow: 1; /* 讓標題佔據更多空間 */
+            text-align: left; /* 標題左對齊 */
+        }
+
+        .header-info { /* 新增的容器，用於包裹分數和音效按鈕 */
+            display: flex;
+            align-items: center;
+            gap: 20px; /* 分數和按鈕之間的間距 */
+            flex-wrap: wrap;
+            justify-content: flex-end; /* 資訊靠右對齊 */
+        }
+
+        .score {
+            font-size: 18px;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        #game-container {
+            position: relative;
+            width: 90%; /* 響應式寬度 */
+            max-width: 960px; /* 最大寬度 */
+            height: 60vh; /* 響應式高度 */
+            min-height: 400px; /* 最小高度 */
+            background-color: #0f3460;
+            border: 4px solid #533483;
+            box-shadow: 0 0 0 8px #0f3460, 0 0 0 12px #533483;
+            overflow: hidden; /* 遊戲內容應在容器內，不自動滾動此容器本身 */
+            image-rendering: pixelated;
+            margin: 0 auto 20px auto; /* 居中並有底部間距 */
+            display: flex; /* 確保內部元素可以居中 */
+            flex-direction: column; /* 垂直排列內容: sort-area 和 check-button */
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            border-bottom-left-radius: 8px; /* 新增圓角 */
+            border-bottom-right-radius: 8px; /* 新增圓角 */
+        }
+
+        /* 調整後的排序區域樣式 (左右拖曳) */
+        #sort-area {
+            display: flex;
+            flex-direction: row; /* 主要改動: 項目區和分類區左右排列 */
+            width: 100%;
+            height: 100%;
+            align-items: flex-start; /* 讓內容從頂部開始對齊 */
+            justify-content: space-around; /* 在兩側之間平均分配空間 */
+            gap: 30px; /* 項目區和分類區之間的間距 */
+        }
+
+        /* 左側的待分類項目區域 */
+        #items-to-sort {
+            display: flex;
+            flex-direction: column; /* 項目垂直堆疊 */
+            flex-wrap: wrap; /* 允許在垂直空間不足時換行 */
+            justify-content: flex-start; /* 項目從頂部開始排列 */
+            align-items: center; /* 項目水平居中 */
+            gap: 10px; /* 項目之間的間距 */
+            width: 45%; /* 佔據 sort-area 的一部分寬度 */
+            padding: 15px;
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 8px;
+            background-color: rgba(0,0,0,0.2);
+            min-height: 300px; /* 確保有足夠的高度容納項目 */
+            box-sizing: border-box;
+            overflow-y: auto; /* 如果項目過多，允許此區域滾動 */
+        }
+        
+        /* 避免 items-to-sort 在小螢幕下換行過多導致擠壓 */
+        @media (max-width: 768px) {
+            #sort-area {
+                flex-direction: column; /* 在小螢幕下改回垂直堆疊 */
+                align-items: center;
+            }
+            #items-to-sort, .sort-categories {
+                width: 90%; /* 佔據更多寬度 */
+            }
+        }
+
+
+        .sortable-item {
+            background-color: #533483;
+            padding: 8px 12px; /* 縮小內邊距 */
+            border: 2px solid #0f3460;
+            border-radius: 5px;
+            cursor: grab;
+            font-size: 12px; /* 縮小字體大小 */
+            box-shadow: 3px 3px 0 #000;
+            transition: background-color 0.2s, transform 0.1s, border-color 0.2s; /* 添加過渡效果 */
+            touch-action: none; /* 禁用瀏覽器默認的觸摸行為 */
+            width: calc(100% - 24px); /* 減去左右 padding 和 border */
+            max-width: 200px; /* 限制最大寬度，防止過長 */
+            text-align: center;
+        }
+
+        .sortable-item:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+            box-shadow: 4px 4px 0 #000;
+            z-index: 10; /* 拖曳時層級高一點 */
+        }
+
+        /* 項目被拖曳放入分類框後的醒目顏色 */
+        .sortable-item.dropped-in-category {
+            background-color: #7a5ba7; /* 淺紫色，表示已放置 */
+            box-shadow: inset 1px 1px 0 #0f3460; /* 內陰影，表示已固定 */
+        }
+
+        /* 右側的分類框區域 */
+        .sort-categories {
+            display: flex;
+            flex-direction: column; /* 分類框垂直堆疊 */
+            justify-content: flex-start; /* 分類框從頂部開始排列 */
+            align-items: center; /* 分類框水平居中 */
+            gap: 20px; /* 分類框之間的間距 */
+            width: 45%; /* 佔據 sort-area 的另一部分寬度 */
+            box-sizing: border-box;
+            min-height: 300px; /* 確保有足夠的高度容納分類框 */
+        }
+
+        .category-box {
+            flex: 1; /* 讓分類框等高 */
+            min-width: 150px; /* 調整最小寬度 */
+            width: 100%; /* 填充父容器 sort-categories 的寬度 */
+            background-color: #16213e;
+            border: 4px solid #0f3460;
+            box-shadow: 0 0 0 8px rgba(0, 0, 0, 0.3);
+            padding: 15px; /* 調整內邊距 */
+            text-align: center;
+            min-height: 120px; /* 調整最小高度 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* 讓內容從頂部開始排列 */
+            gap: 8px; /* 調整內部間距 */
+            box-sizing: border-box; /* 確保 padding 和 border 不會增加元素總寬度 */
+        }
+
+        .category-box.correct-category {
+            border-color: #4CAF50;
+        }
+
+        .category-box.incorrect-category {
+            border-color: #e94560;
+        }
+
+        .category-title {
+            font-size: 16px; /* 調整字體大小 */
+            margin-bottom: 8px; /* 調整底部間距 */
+            color: #FFD700;
+            text-shadow: 2px 2px 0 #000;
+            border-bottom: 2px dashed rgba(255,255,255,0.2);
+            padding-bottom: 5px;
+            width: 100%;
+        }
+
+        .category-box .sortable-item {
+            width: calc(100% - 12px); /* 減去新的padding和border */
+            margin: 4px 0; /* 垂直間距 */
+        }
+
+        .check-button {
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            background-color: #e94560;
+            color: white;
+            border: 3px solid #fff;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 5px 5px 0 #000;
+            transition: background-color 0.2s, transform 0.1s;
+            border-radius: 5px; /* 新增圓角 */
+        }
+
+        .check-button:hover {
+            background-color: #ff6b81;
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 #000;
+        }
+
+        /* 遊戲結束/勝利畫面 */
+        .result-screen {
+            position: fixed; /* 將結果畫面固定在視窗中央 */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(22, 33, 62, 0.95);
+            display: none; /* 預設隱藏 */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 600;
+            text-align: center;
+        }
+
+        .result-message {
+            font-size: 20px;
+            color: #FFD700;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 0 #000;
+            max-width: 80%;
+        }
+
+        .result-screen button {
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            background-color: #e94560;
+            color: white;
+            border: 3px solid #fff;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 5px 5px 0 #000;
+            transition: background-color 0.2s, transform 0.1s;
+            border-radius: 5px; /* 新增圓角 */
+        }
+
+        .result-screen button:hover {
+            background-color: #ff6b81;
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 #000;
+        }
+
+        /* 說明畫面 */
+        .instruction-screen {
+            position: fixed; /* 將說明畫面固定在視窗中央 */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(22, 33, 62, 0.95);
+            display: flex; /* 預設顯示 */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 700;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        
+        .instruction-title {
+            font-size: 24px;
+            color: #e94560;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 0 #000;
+            padding: 10px 20px;
+            border-bottom: 3px solid #e94560;
+        }
+        
+        .instruction-content {
+            max-width: 700px;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            border: 2px solid #0f3460;
+            padding: 20px;
+            background-color: rgba(15, 52, 96, 0.5);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .instruction-content ul {
+            text-align: left;
+            margin: 0 auto;
+            padding-left: 20px;
+        }
+
+        .instruction-content li {
+            margin-bottom: 10px;
+        }
+
+        .continue-button {
+            padding: 10px 20px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            background-color: #e94560;
+            color: white;
+            border: 3px solid #fff;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 4px 4px 0 #000;
+            border-radius: 5px; /* 新增圓角 */
+        }
+
+        .sound-toggle-button {
+            padding: 8px 12px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            background-color: #533483;
+            color: #fff;
+            border: 2px solid #0f3460;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 #000;
+            border-radius: 5px; /* 新增圓角 */
+        }
+
+        /* feedbackText 的樣式，用於顯示未分類提示 */
+        .feedback {
+            margin-top: 15px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .feedback.wrong {
+            color: #e94560;
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景音樂 -->
+    <audio id="bgMusic" loop>
+        <source src="level3Music.mp3" type="audio/mpeg">
+        您的瀏覽器不支援音頻元素。
+    </audio>
+    <!-- 拖曳音效 -->
+    <audio id="dragSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-sweep-transition-2498.mp3" type="audio/mpeg">
+    </audio>
+    <!-- 放置音效 -->
+    <audio id="dropSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-positive-game-tone-2580.mp3" type="audio/mpeg">
+    </audio>
+    <!-- 檢查正確音效 -->
+    <audio id="checkCorrectSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-in-a-video-game-2045.mp3" type="audio/mpeg">
+    </audio>
+    <!-- 檢查錯誤音效 -->
+    <audio id="checkWrongSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-in-a-video-game-2046.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="header">
+        <div class="game-title">SDGs 正義分類</div>
+        <div class="header-info">
+            <div class="score">答對題數: <span id="score"></span></div>
+            <button class="sound-toggle-button" id="sound-toggle">音效: 開</button>
+        </div>
+    </div>
+    
+    <div id="game-container">
+        <!-- 說明畫面 -->
+        <div class="instruction-screen" id="instruction-screen">
+            <div class="instruction-title">第三關：正義分類挑戰</div>
+            <div class="instruction-content">
+                <p>請將左側的<span style="color:#FFD700;font-weight:bold;">概念詞</span>拖曳至右側正確的分類箱中。</p>
+                <ul>
+                    <li>將屬於SDG16精神的詞語拖曳到<span style="color:#4CAF50;font-weight:bold;">「正確概念」</span>。</li>
+                    <li>將不符合SDG16精神的詞語拖曳到<span style="color:#e94560;font-weight:bold;">「錯誤概念」</span>。</li>
+                    <li>完成所有分類後，點擊「提交答案」按鈕。</li>
+                    <li>答對<span style="color:#FFD700;font-weight:bold;">5題</span>即可通關！</li>
+                </ul>
+                <p style="margin-top:15px;color:#FFD700;">目標：辨別符合和平、正義及健全制度的核心概念</p>
+            </div>
+            <button class="continue-button" id="continue-button">開始分類</button>
+        </div>
+
+        <div id="sort-area" style="display: none;">
+            <div id="items-to-sort">
+                <!-- 可拖曳項目將在這裡動態加載 -->
+            </div>
+            <div class="sort-categories">
+                <div class="category-box correct-category" id="correct-category">
+                    <div class="category-title">正確概念</div>
+                </div>
+                <div class="category-box incorrect-category" id="incorrect-category">
+                    <div class="category-title">錯誤概念</div>
+                </div>
+            </div>
+        </div>
+        <button class="check-button" id="check-button">提交答案</button>
+        <!-- 用於顯示未分類提示的元素 -->
+        <div class="feedback" id="feedback-text"></div>
+    </div>
+
+    <!-- 結果畫面 -->
+    <div class="result-screen" id="result-screen">
+        <div class="result-message" id="result-message"></div>
+        <button id="next-button" style="display: none;" onclick="window.location.href='level4.html'">前往下一關</button>
+        <button id="retry-button" style="display: none;" onclick="window.location.reload()">重新挑戰</button>
+    </div>
+
+    <script>
+        // 遊戲狀態物件
+        const gameState = {
+            score: 0,
+            requiredScore: 5,
+            soundEnabled: true,
+            items: [
+                { text: "法治", correct: true },
+                { text: "透明政府", correct: true },
+                { text: "貪污", correct: false },
+                { text: "人權保障", correct: true },
+                { text: "武力衝突", correct: false },
+                { text: "包容性社會", correct: true },
+                { text: "言論審查", correct: false },
+                { text: "司法獨立", correct: true },
+                { text: "賄賂", correct: false },
+                { text: "公民參與", correct: true }
+            ].sort(() => Math.random() - 0.5) // 打亂項目順序
+        };
+
+        // DOM 元素獲取
+        const itemsToSortContainer = document.getElementById('items-to-sort');
+        const correctCategory = document.getElementById('correct-category');
+        const incorrectCategory = document.getElementById('incorrect-category');
+        const checkButton = document.getElementById('check-button');
+        const scoreDisplay = document.getElementById('score');
+        const resultScreen = document.getElementById('result-screen');
+        const resultMessage = document.getElementById('result-message');
+        const nextButton = document.getElementById('next-button');
+        const retryButton = document.getElementById('retry-button');
+        const instructionScreen = document.getElementById('instruction-screen');
+        const continueButton = document.getElementById('continue-button');
+        const feedbackText = document.getElementById('feedback-text'); /* 獲取 feedbackText 元素 */
+
+        let draggedItem = null;
+
+        // 初始化遊戲
+        function initGame() {
+            instructionScreen.style.display = 'flex'; // 顯示說明畫面
+
+            if (continueButton) {
+                continueButton.removeEventListener('click', handleContinueButtonClick); // 避免重複綁定
+                continueButton.addEventListener('click', handleContinueButtonClick);
+            }
+            initSound(); // 初始化音效
+        }
+
+        // 處理「開始分類」按鈕點擊
+        function handleContinueButtonClick() {
+            instructionScreen.style.display = 'none'; // 隱藏說明畫面
+            document.getElementById('sort-area').style.display = 'flex'; // 顯示遊戲區域
+            setupDragAndDrop(); // 設定拖放功能
+
+            // 嘗試播放背景音樂
+            if (gameState.soundEnabled) {
+                const bgMusic = document.getElementById('bgMusic');
+                bgMusic.play().catch(e => console.log('Autoplay prevented:', e));
+            }
+        }
+
+        // 設定拖放功能
+        function setupDragAndDrop() {
+            itemsToSortContainer.innerHTML = '';
+            correctCategory.innerHTML = '<div class="category-title">正確概念</div>';
+            incorrectCategory.innerHTML = '<div class="category-title">錯誤概念</div>';
+            gameState.score = 0;
+            scoreDisplay.textContent = `${gameState.score}/${gameState.items.length}`; /* 更新顯示總題數 */
+
+            gameState.items.forEach((itemData) => {
+                const item = document.createElement('div');
+                item.className = 'sortable-item';
+                item.textContent = itemData.text;
+                item.dataset.correct = itemData.correct;
+                item.draggable = true; // 設置為可拖曳
+
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('touchstart', handleTouchStart, { passive: false }); // 啟用觸摸事件
+
+                itemsToSortContainer.appendChild(item);
+            });
+
+            // 為分類框添加拖放事件監聽器
+            [itemsToSortContainer, correctCategory, incorrectCategory].forEach(category => {
+                category.addEventListener('dragover', handleDragOver);
+                category.addEventListener('drop', handleDrop);
+                category.addEventListener('touchend', handleTouchEnd); // 觸摸結束
+                category.addEventListener('touchmove', handleTouchMove, { passive: false }); // 觸摸移動
+            });
+
+            checkButton.removeEventListener('click', checkAnswers); // 避免重複綁定
+            checkButton.addEventListener('click', checkAnswers);
+        }
+
+        // 拖曳開始
+        function handleDragStart(e) {
+            draggedItem = e.target;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', e.target.id); // 設置一些數據，但這裡主要靠 draggedItem 變數
+            e.target.classList.add('dragging');
+            playDragSound();
+        }
+
+        // 拖曳經過
+        function handleDragOver(e) {
+            e.preventDefault(); // 允許放置
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        // 放置
+        function handleDrop(e) {
+            e.preventDefault();
+            const targetElement = e.target.closest('.category-box') || e.target.closest('#items-to-sort'); /* 允許放回原始容器 */
+
+            if (draggedItem && targetElement) { 
+                targetElement.appendChild(draggedItem);
+                draggedItem.classList.remove('dragging');
+                draggedItem.classList.add('dropped-in-category'); // 新增：項目放置後顯示醒目顏色
+                playDropSound();
+                draggedItem = null; // 清除拖曳中的項目
+            }
+        }
+
+        // 觸摸開始
+        function handleTouchStart(e) {
+            draggedItem = e.target;
+            if (!draggedItem.classList.contains('sortable-item')) { // 確保只拖曳可排序項目
+                draggedItem = null;
+                return;
+            }
+            draggedItem.classList.add('dragging');
+            draggedItem.style.position = 'absolute'; // 觸摸拖曳需要絕對定位
+            draggedItem.style.zIndex = '1000'; // 確保在最上層
+            const touch = e.touches[0];
+            // 計算觸摸點在項目內的偏移量
+            draggedItem.offsetX = touch.clientX - draggedItem.getBoundingClientRect().left;
+            draggedItem.offsetY = touch.clientY - draggedItem.getBoundingClientRect().top;
+            playDragSound();
+        }
+
+        // 觸摸移動
+        function handleTouchMove(e) {
+            if (!draggedItem) return;
+            e.preventDefault(); // 防止滾動
+            const touch = e.touches[0];
+            // 更新項目位置，考慮偏移量
+            draggedItem.style.left = `${touch.clientX - draggedItem.offsetX}px`;
+            draggedItem.style.top = `${touch.clientY - draggedItem.offsetY}px`;
+        }
+
+        // 觸摸結束
+        function handleTouchEnd(e) {
+            if (!draggedItem) return;
+
+            draggedItem.classList.remove('dragging');
+            draggedItem.style.position = ''; // 恢復默認定位
+            draggedItem.style.zIndex = ''; // 恢復默認z-index
+
+            const touch = e.changedTouches[0];
+            const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+            const targetContainer = (dropTarget && dropTarget.closest('.category-box')) || (dropTarget && dropTarget.closest('#items-to-sort'));
+
+            if (targetContainer) {
+                targetContainer.appendChild(draggedItem);
+                draggedItem.classList.add('dropped-in-category'); // 新增：項目放置後顯示醒目顏色
+                playDropSound();
+            } else {
+                // 如果沒有放置到有效區域，將項目放回原位（原始容器）
+                itemsToSortContainer.appendChild(draggedItem);
+                draggedItem.classList.remove('dropped-in-category'); // 移回原位則移除醒目顏色
+                playDropSound(); 
+            }
+            draggedItem = null;
+        }
+
+        // 檢查答案
+        function checkAnswers() {
+            let correctCount = 0;
+            // 檢查原始容器內是否還有子元素（未分類的項目）
+            if (itemsToSortContainer.children.length > 0) {
+                feedbackText.textContent = '還有項目沒有分類，請先完成分類！';
+                feedbackText.className = 'feedback wrong';
+                setTimeout(() => feedbackText.textContent = '', 2000); // 2秒後清除提示
+                playCheckWrongSound(); 
+                return; 
+            }
+
+            // 檢查「正確概念」分類框中的項目
+            correctCategory.querySelectorAll('.sortable-item').forEach(item => {
+                item.classList.remove('dropped-in-category'); // 移除醒目顏色
+                if (item.dataset.correct === 'true') {
+                    correctCount++;
+                    item.style.borderColor = '#4CAF50'; /* 正確的邊框顏色 */
+                } else {
+                    item.style.borderColor = '#e94560'; /* 錯誤的邊框顏色 */
+                }
+            });
+
+            // 檢查「錯誤概念」分類框中的項目
+            incorrectCategory.querySelectorAll('.sortable-item').forEach(item => {
+                item.classList.remove('dropped-in-category'); // 移除醒目顏色
+                if (item.dataset.correct === 'false') {
+                    correctCount++;
+                    item.style.borderColor = '#4CAF50'; /* 正確的邊框顏色 */
+                } else {
+                    item.style.borderColor = '#e94560'; /* 錯誤的邊框顏色 */
+                }
+            });
+
+            gameState.score = correctCount;
+            scoreDisplay.textContent = `答對題數: ${gameState.score}/${gameState.items.length}`; // 顯示答對題數/總題數
+
+            if (gameState.score >= gameState.requiredScore) {
+                playCheckCorrectSound();
+                showResult(true); // 勝利
+            } else {
+                playCheckWrongSound();
+                showResult(false); // 失敗
+            }
+            checkButton.disabled = true; // 檢查後禁用按鈕
+        }
+
+        // 顯示結果
+        function showResult(isVictory) {
+            const resultScreen = document.getElementById('result-screen');
+            const resultMessage = document.getElementById('result-message');
+            const nextButton = document.getElementById('next-button');
+            const retryButton = document.getElementById('retry-button');
+            
+            resultScreen.style.display = 'flex';
+            
+            if (isVictory) {
+                resultMessage.textContent = `恭喜！你答對了 ${gameState.score} 題，成功通關！`;
+                nextButton.style.display = 'block';
+            } else {
+                resultMessage.textContent = `你答對了 ${gameState.score} 題，未達到通關標準，請重新挑戰！`;
+                retryButton.style.display = 'block';
+            }
+        }
+
+        // 初始化音效
+        function initSound() {
+            const bgMusic = document.getElementById('bgMusic');
+            const dragSound = document.getElementById('dragSound');
+            const dropSound = document.getElementById('dropSound');
+            const checkCorrectSound = document.getElementById('checkCorrectSound');
+            const checkWrongSound = document.getElementById('checkWrongSound');
+            const soundToggle = document.getElementById('sound-toggle');
+
+            // 確保所有音效元素都存在
+            if (!bgMusic || !dragSound || !dropSound || !checkCorrectSound || !checkWrongSound || !soundToggle) {
+                console.error('One or more audio elements or sound toggle button not found!');
+                return;
+            }
+            
+            bgMusic.volume = 0.3;
+            dragSound.volume = 0.2;
+            dropSound.volume = 0.3;
+            checkCorrectSound.volume = 0.5;
+            checkWrongSound.volume = 0.5;
+
+            // 音效切換按鈕
+            soundToggle.removeEventListener('click', toggleSound); // 避免重複綁定
+            soundToggle.addEventListener('click', toggleSound);
+            
+            // 嘗試播放背景音樂（需要用戶交互後才能自動播放）
+            document.removeEventListener('click', autoPlayBgMusicOnce); // 避免重複綁定
+            document.addEventListener('click', autoPlayBgMusicOnce, { once: true });
+        }
+
+        // 音效切換功能
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            const soundToggle = document.getElementById('sound-toggle');
+            if (soundToggle) {
+                soundToggle.textContent = `音效: ${gameState.soundEnabled ? '開' : '關'}`;
+            }
+            const bgMusic = document.getElementById('bgMusic');
+            if (bgMusic) {
+                if (gameState.soundEnabled) {
+                    bgMusic.play().catch(e => console.log('Autoplay prevented on toggle:', e));
+                } else {
+                    bgMusic.pause();
+                }
+            }
+        }
+
+        // 首次用戶交互後嘗試播放背景音樂
+        function autoPlayBgMusicOnce() {
+            const bgMusic = document.getElementById('bgMusic');
+            if (gameState.soundEnabled && bgMusic) {
+                bgMusic.play().catch(e => console.log('Autoplay prevented on first interaction:', e));
+            }
+        }
+
+        // 播放拖曳音效
+        function playDragSound() {
+            if (gameState.soundEnabled) {
+                const dragSound = document.getElementById('dragSound');
+                if (dragSound) {
+                    dragSound.currentTime = 0;
+                    dragSound.play().catch(e => console.log('Drag sound play prevented:', e));
+                }
+            }
+        }
+
+        // 播放放置音效
+        function playDropSound() {
+            if (gameState.soundEnabled) {
+                const dropSound = document.getElementById('dropSound');
+                if (dropSound) {
+                    dropSound.currentTime = 0;
+                    dropSound.play().catch(e => console.log('Drop sound play prevented:', e));
+                }
+            }
+        }
+
+        // 播放檢查正確音效
+        function playCheckCorrectSound() {
+            if (gameState.soundEnabled) {
+                const checkCorrectSound = document.getElementById('checkCorrectSound');
+                if (checkCorrectSound) {
+                    checkCorrectSound.currentTime = 0;
+                    checkCorrectSound.play().catch(e => console.log('Check correct sound play prevented:', e));
+                }
+            }
+        }
+
+        // 播放檢查錯誤音效
+        function playCheckWrongSound() {
+            if (gameState.soundEnabled) {
+                const checkWrongSound = document.getElementById('checkWrongSound');
+                if (checkWrongSound) {
+                    checkWrongSound.currentTime = 0;
+                    checkWrongSound.play().catch(e => console.log('Check wrong sound play prevented:', e));
+                }
+            }
+        }
+
+        // 啟動遊戲
+        window.onload = initGame;
+    </script>
+</body>
+</html>

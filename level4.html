@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDGs RPG - 正義裁決者 第四關</title>
+    <style>
+        /* 基礎樣式 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #0a0a1a;
+            color: #fff;
+            overflow: hidden;
+            image-rendering: pixelated;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        }
+        
+        /* 標題欄 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #16213e;
+            border-bottom: 4px solid #0f3460;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 400;
+            width: 90%;
+            max-width: 960px;
+            box-sizing: border-box;
+            background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .game-title {
+            font-size: 20px;
+            color: #e94560;
+            text-shadow: 2px 2px 0 #000;
+            flex-grow: 1;
+            text-align: left;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .score {
+            font-size: 18px;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .sound-toggle-button {
+            padding: 8px 12px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            background-color: #533483;
+            color: #fff;
+            border: 2px solid #0f3460;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 #000;
+            border-radius: 5px;
+        }
+
+        /* 遊戲容器 */
+        #game-container {
+            position: relative;
+            width: 90%;
+            max-width: 960px;
+            height: 60vh;
+            min-height: 500px;
+            background-color: #0f3460;
+            border: 4px solid #533483;
+            box-shadow: 0 0 0 8px #0f3460, 0 0 0 12px #533483;
+            overflow: hidden;
+            image-rendering: pixelated;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* 確保內容和按鈕間有空間 */
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* 配對區塊 */
+        #match-area {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            height: calc(100% - 70px); /* 減去按鈕的高度和間距 */
+            padding-bottom: 20px; /* 底部留一點空間 */
+            box-sizing: border-box;
+        }
+
+        .concept-column, .definition-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* 項目之間的垂直間距 */
+            width: 45%;
+            padding: 15px;
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 8px;
+            background-color: rgba(0,0,0,0.2);
+            overflow-y: auto; /* 允許滾動 */
+            box-sizing: border-box;
+            max-height: 100%; /* 確保內容不會溢出父容器 */
+        }
+
+        /* 可點擊項目樣式 */
+        .match-item {
+            background-color: #533483;
+            padding: 10px 15px;
+            border: 2px solid #0f3460;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: center;
+            box-shadow: 3px 3px 0 #000;
+            transition: background-color 0.2s, border-color 0.2s, transform 0.1s;
+        }
+
+        .match-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0 #000;
+        }
+
+        /* 新增的選取狀態樣式 */
+        .match-item.selected {
+            background-color: #FFD700; /* 亮黃色 */
+            border-color: #FF8C00; /* 深橘色 */
+            color: #333;
+            box-shadow: 0 0 10px #FFD700;
+        }
+
+        /* 配對後的樣式 */
+        .match-item.paired {
+            background-color: #28a745; /* 綠色 */
+            border-color: #218838;
+            color: #fff;
+            cursor: default; /* 配對後不可再點擊 */
+            box-shadow: 3px 3px 0 #0f3460;
+        }
+
+        /* 最終正確配對的樣式 */
+        .match-item.correct-pair {
+            background-color: #4CAF50; /* 亮綠色 */
+            border-color: #388E3C;
+            color: #fff;
+            box-shadow: 3px 3px 0 #0f3460;
+        }
+
+        /* 最終錯誤配對的樣式 */
+        .match-item.incorrect-pair {
+            background-color: #e94560; /* 亮紅色 */
+            border-color: #C62828;
+            color: #fff;
+            box-shadow: 3px 3px 0 #0f3460;
+        }
+
+        /* 禁用點擊的樣式 */
+        .match-item.disabled-click {
+            pointer-events: none; /* 禁用滑鼠事件 */
+            opacity: 0.7; /* 稍微變暗表示禁用 */
+        }
+
+        /* 提交按鈕 */
+        .check-button {
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            background-color: #e94560;
+            color: white;
+            border: 3px solid #fff;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 5px 5px 0 #000;
+            transition: background-color 0.2s, transform 0.1s;
+            border-radius: 5px;
+        }
+
+        .check-button:hover {
+            background-color: #ff6b81;
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 #000;
+        }
+
+        /* 遊戲結束/勝利畫面 */
+        .result-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(22, 33, 62, 0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 600;
+            text-align: center;
+        }
+
+        .result-message {
+            font-size: 20px;
+            color: #FFD700;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 0 #000;
+            max-width: 80%;
+        }
+
+        .result-screen button {
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            background-color: #e94560;
+            color: white;
+            border: 3px solid #fff;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 5px 5px 0 #000;
+            transition: background-color 0.2s, transform 0.1s;
+            border-radius: 5px;
+        }
+
+        .result-screen button:hover {
+            background-color: #ff6b81;
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 #000;
+        }
+
+        /* 說明畫面 */
+        .instruction-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(22, 33, 62, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 700;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        
+        .instruction-title {
+            font-size: 24px;
+            color: #e94560;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 0 #000;
+            padding: 10px 20px;
+            border-bottom: 3px solid #e94560;
+        }
+        
+        .instruction-content {
+            max-width: 700px;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            border: 2px solid #0f3460;
+            padding: 20px;
+            background-color: rgba(15, 52, 96, 0.5);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .instruction-content ul {
+            text-align: left;
+            margin: 0 auto;
+            padding-left: 20px;
+        }
+
+        .instruction-content li {
+            margin-bottom: 10px;
+        }
+
+        .continue-button {
+            padding: 10px 20px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            background-color: #e94560;
+            color: white;
+            border: 3px solid #fff;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 4px 4px 0 #000;
+            border-radius: 5px;
+        }
+
+        /* feedbackText 的樣式，用於顯示未分類提示 */
+        .feedback {
+            margin-top: 15px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            color: #e94560; /* 錯誤提示顏色 */
+        }
+    </style>
+</head>
+<body>
+    <audio id="bgMusic" loop>
+        <source src="level4Music.mp3" type="audio/mpeg">
+        您的瀏覽器不支援音頻元素。
+    </audio>
+    <audio id="selectSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-game-bling-2070.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="matchCorrectSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-in-a-video-game-2045.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="matchWrongSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-in-a-video-game-2046.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="pairErrorSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-negative-game-tone-2321.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="header">
+        <div class="game-title">SDGs 概念配對</div>
+        <div class="header-info">
+            <div class="score">答對題數: <span id="score"></span></div>
+            <button class="sound-toggle-button" id="sound-toggle">音效: 開</button>
+        </div>
+    </div>
+    
+    <div id="game-container">
+        <div class="instruction-screen" id="instruction-screen">
+            <div class="instruction-title">第四關：概念配對挑戰</div>
+            <div class="instruction-content">
+                <p>請將左側的<span style="color:#FFD700;font-weight:bold;">SDG16概念</span>與右側對應的<span style="color:#FFD700;font-weight:bold;">解釋</span>進行配對。</p>
+                <ul>
+                    <li>點擊左側的一個概念，它會變成<span style="color:#FFD700;font-weight:bold;">黃色邊框</span>。</li>
+                    <li>再點擊右側對應的解釋，如果配對成功，兩者會變成<span style="color:#28a745;font-weight:bold;">綠色背景</span>。</li>
+                    <li>配對失敗會清除選擇，請重新點擊。</li>
+                    <li>完成所有配對後，點擊「提交答案」按鈕。</li>
+                    <li>答對<span style="color:#FFD700;font-weight:bold;">5題</span>即可通關！</li>
+                </ul>
+                <p style="margin-top:15px;color:#FFD700;">目標：理解SDG16核心概念及其意涵</p>
+            </div>
+            <button class="continue-button" id="continue-button">開始配對</button>
+        </div>
+
+        <div id="match-area" style="display: none;">
+            <div class="concept-column" id="concept-column">
+                </div>
+            <div class="definition-column" id="definition-column">
+                </div>
+        </div>
+        <button class="check-button" id="check-button" style="display: none;">提交答案</button>
+        <div class="feedback" id="feedback-text"></div>
+    </div>
+
+    <div class="result-screen" id="result-screen">
+        <div class="result-message" id="result-message"></div>
+        <button id="next-button" style="display: none;" onclick="window.location.href='level5.html'">前往下一關</button>
+        <button id="retry-button" style="display: none;" onclick="window.location.reload()">重新挑戰</button>
+    </div>
+
+    <script>
+        // 遊戲狀態物件
+        const gameState = {
+            score: 0,
+            requiredScore: 5,
+            soundEnabled: true,
+            selectedElement: null, // 追蹤當前被選中的元素
+            matchedPairs: [], // 追蹤已配對的元素，包含是否正確的資訊
+            concepts: [
+                { id: 'c1', text: '法治', matchId: 'd1' },
+                { id: 'c2', text: '透明政府', matchId: 'd2' },
+                { id: 'c3', text: '廉潔', matchId: 'd3' },
+                { id: 'c4', text: '平等', matchId: 'd4' },
+                { id: 'c5', text: '參與式決策', matchId: 'd5' },
+                { id: 'c6', text: '和平解決爭端', matchId: 'd6' },
+                { id: 'c7', text: '非歧視', matchId: 'd7' }
+            ],
+            definitions: [
+                { id: 'd1', text: '確保所有法律公平適用，無人能凌駕其上', matchId: 'c1' },
+                { id: 'd2', text: '政府資訊公開，決策過程清晰，增加公眾信任', matchId: 'c2' },
+                { id: 'd3', text: '杜絕腐敗和濫用權力，維護公共資源的公正使用', matchId: 'c3' },
+                { id: 'd4', text: '消除一切形式的歧視，促進所有人機會均等，無論背景如何', matchId: 'c4' },
+                { id: 'd5', text: '鼓勵公民積極參與公共事務的決策過程，聲音被聽見', matchId: 'c5' },
+                { id: 'd6', text: '透過談判、調解等非暴力方式解決國際或國內衝突', matchId: 'c6' },
+                { id: 'd7', text: '不分種族、性別、宗教、國籍等，人人享有同等權利和機會', matchId: 'c7' }
+            ]
+        };
+
+        // DOM 元素獲取
+        const conceptColumn = document.getElementById('concept-column');
+        const definitionColumn = document.getElementById('definition-column');
+        const checkButton = document.getElementById('check-button');
+        const scoreDisplay = document.getElementById('score');
+        const resultScreen = document.getElementById('result-screen');
+        const resultMessage = document.getElementById('result-message');
+        const nextButton = document.getElementById('next-button');
+        const retryButton = document.getElementById('retry-button');
+        const instructionScreen = document.getElementById('instruction-screen');
+        const continueButton = document.getElementById('continue-button');
+        const feedbackText = document.getElementById('feedback-text');
+
+        // 音效元素
+        const bgMusic = document.getElementById('bgMusic');
+        const selectSound = document.getElementById('selectSound');
+        const matchCorrectSound = document.getElementById('matchCorrectSound');
+        const matchWrongSound = document.getElementById('matchWrongSound');
+        const pairErrorSound = document.getElementById('pairErrorSound'); // 新增音效
+        const soundToggle = document.getElementById('sound-toggle');
+
+
+        // --- 音效相關函數 ---
+        function playSound(soundElement) {
+            if (gameState.soundEnabled && soundElement) {
+                soundElement.currentTime = 0;
+                soundElement.play().catch(e => console.log('Sound play prevented:', e));
+            }
+        }
+
+        function playSelectSound() { playSound(selectSound); }
+        function playMatchCorrectSound() { playSound(matchCorrectSound); }
+        function playMatchWrongSound() { playSound(matchWrongSound); }
+        function playPairErrorSound() { playSound(pairErrorSound); }
+        
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            soundToggle.textContent = `音效: ${gameState.soundEnabled ? '開' : '關'}`;
+            if (bgMusic) {
+                if (gameState.soundEnabled) {
+                    bgMusic.play().catch(e => console.log('Autoplay prevented on toggle:', e));
+                } else {
+                    bgMusic.pause();
+                }
+            }
+        }
+
+        function autoPlayBgMusicOnce() {
+            if (gameState.soundEnabled && bgMusic) {
+                bgMusic.play().catch(e => console.log('Autoplay prevented on first interaction:', e));
+            }
+        }
+
+        // 初始化遊戲
+        function initGame() {
+            instructionScreen.style.display = 'flex';
+            if (continueButton) {
+                continueButton.removeEventListener('click', handleContinueButtonClick);
+                continueButton.addEventListener('click', handleContinueButtonClick);
+            }
+            initSound();
+        }
+
+        // 處理「開始配對」按鈕點擊
+        function handleContinueButtonClick() {
+            instructionScreen.style.display = 'none';
+            document.getElementById('match-area').style.display = 'flex';
+            checkButton.style.display = 'block'; // 顯示提交按鈕
+            startGame();
+
+            if (gameState.soundEnabled) {
+                bgMusic.play().catch(e => console.log('Autoplay prevented:', e));
+            }
+        }
+
+        // 開始遊戲的核心邏輯
+        function startGame() {
+            gameState.score = 0;
+            gameState.selectedElement = null;
+            gameState.matchedPairs = [];
+            scoreDisplay.textContent = `${gameState.score}/${gameState.concepts.length}`;
+            
+            conceptColumn.innerHTML = ''; // 清空舊的項目
+            definitionColumn.innerHTML = ''; // 清空舊的項目
+
+            // 打亂並生成概念和定義元素
+            const shuffledConcepts = [...gameState.concepts].sort(() => Math.random() - 0.5);
+            const shuffledDefinitions = [...gameState.definitions].sort(() => Math.random() - 0.5);
+
+            shuffledConcepts.forEach(concept => {
+                const item = document.createElement('div');
+                item.className = 'match-item concept';
+                item.textContent = concept.text;
+                item.id = concept.id; // 為概念設置唯一ID
+                item.dataset.type = 'concept';
+                item.dataset.matchId = concept.matchId; // 設置應匹配的定義ID
+                item.addEventListener('click', handleItemClick);
+                conceptColumn.appendChild(item);
+            });
+
+            shuffledDefinitions.forEach(definition => {
+                const item = document.createElement('div');
+                item.className = 'match-item definition';
+                item.textContent = definition.text;
+                item.id = definition.id; // 為定義設置唯一ID
+                item.dataset.type = 'definition';
+                item.dataset.matchId = definition.matchId; // 設置應匹配的概念ID
+                item.addEventListener('click', handleItemClick);
+                definitionColumn.appendChild(item);
+            });
+
+            checkButton.removeEventListener('click', checkAnswers);
+            checkButton.addEventListener('click', checkAnswers);
+        }
+
+        // 處理項目點擊
+        function handleItemClick(event) {
+            const clickedItem = event.target;
+
+            // 如果點擊的項目已經被配對，則不處理
+            if (clickedItem.classList.contains('paired')) {
+                return;
+            }
+
+            // 如果沒有選中的項目
+            if (!gameState.selectedElement) {
+                gameState.selectedElement = clickedItem;
+                clickedItem.classList.add('selected');
+                playSelectSound();
+            } else { // 已經有選中的項目
+                // 如果點擊的是同一個項目，取消選中
+                if (gameState.selectedElement === clickedItem) {
+                    clickedItem.classList.remove('selected');
+                    gameState.selectedElement = null;
+                    // playDeselectSound(); // 如果有取消選擇音效
+                    return;
+                }
+
+                // 如果點擊了相同類型的項目 (概念-概念 或 定義-定義)
+                if (gameState.selectedElement.dataset.type === clickedItem.dataset.type) {
+                    gameState.selectedElement.classList.remove('selected'); // 取消上一個選中
+                    gameState.selectedElement = clickedItem; // 選中新的
+                    clickedItem.classList.add('selected');
+                    playPairErrorSound(); // 播放配對錯誤音效
+                    feedbackText.textContent = '請選擇不同類型的項目進行配對！';
+                    setTimeout(() => feedbackText.textContent = '', 1500); // 1.5秒後清除提示
+                    return;
+                }
+
+                // 嘗試配對：檢查兩個項目的 matchId 是否互相匹配
+                const isCorrectMatch = 
+                    (gameState.selectedElement.dataset.matchId === clickedItem.id) && 
+                    (clickedItem.dataset.matchId === gameState.selectedElement.id);
+
+                if (isCorrectMatch) {
+                    // 配對成功
+                    gameState.selectedElement.classList.remove('selected');
+                    gameState.selectedElement.classList.add('paired', 'disabled-click');
+                    clickedItem.classList.add('paired', 'disabled-click');
+                    gameState.matchedPairs.push({ item1: gameState.selectedElement, item2: clickedItem, isCorrect: true });
+                    playMatchCorrectSound();
+                    gameState.score++; // 每次正確配對就計分
+                    scoreDisplay.textContent = `答對題數: ${gameState.score}/${gameState.concepts.length}`; // 即時更新分數
+                } else {
+                    // 配對失敗
+                    gameState.selectedElement.classList.remove('selected');
+                    // clickedItem.classList.add('incorrect-pair'); // 暫時不需要顯示錯誤，等待最終檢查
+                    playMatchWrongSound();
+                    feedbackText.textContent = '配對錯誤，請重新嘗試！';
+                    setTimeout(() => feedbackText.textContent = '', 1500); // 1.5秒後清除提示
+                }
+                gameState.selectedElement = null; // 清除選中的項目
+            }
+            // 檢查是否所有項目都已配對，以決定是否啟用提交按鈕
+            checkAllItemsPaired();
+        }
+
+        // 檢查是否所有項目都已配對
+        function checkAllItemsPaired() {
+            const allItems = document.querySelectorAll('.match-item');
+            const allPaired = Array.from(allItems).every(item => item.classList.contains('paired'));
+            if (allPaired) {
+                checkButton.disabled = false; // 啟用提交按鈕
+            } else {
+                checkButton.disabled = true; // 禁用提交按鈕，直到所有項目都配對
+            }
+        }
+
+        // 檢查答案
+        function checkAnswers() {
+            let finalCorrectCount = 0;
+            // 遍歷所有已配對的項目，應用最終的正確/錯誤樣式
+            gameState.matchedPairs.forEach(pair => {
+                pair.item1.classList.remove('paired');
+                pair.item2.classList.remove('paired');
+                pair.item1.classList.remove('disabled-click'); // 移除禁用以便顯示最終結果
+                pair.item2.classList.remove('disabled-click');
+
+                if (pair.isCorrect) {
+                    pair.item1.classList.add('correct-pair');
+                    pair.item2.classList.add('correct-pair');
+                    finalCorrectCount++;
+                } else {
+                    pair.item1.classList.add('incorrect-pair');
+                    pair.item2.classList.add('incorrect-pair');
+                }
+                // 移除點擊事件，防止再次互動
+                pair.item1.removeEventListener('click', handleItemClick);
+                pair.item2.removeEventListener('click', handleItemClick);
+            });
+
+            gameState.score = finalCorrectCount; // 更新最終分數
+            scoreDisplay.textContent = `答對題數: ${gameState.score}/${gameState.concepts.length}`;
+
+            if (gameState.score >= gameState.requiredScore) {
+                playMatchCorrectSound(); // 播放勝利音效
+                showResult(true);
+            } else {
+                playMatchWrongSound(); // 播放失敗音效
+                showResult(false);
+            }
+            checkButton.disabled = true; // 提交後禁用按鈕
+        }
+
+        // 顯示結果畫面
+        function showResult(isVictory) {
+            resultScreen.style.display = 'flex';
+            if (isVictory) {
+                resultMessage.textContent = `恭喜！你答對了 ${gameState.score} 題，成功通關！`;
+                nextButton.style.display = 'block';
+            } else {
+                resultMessage.textContent = `你答對了 ${gameState.score} 題，未達到通關標準，請重新挑戰！`;
+                retryButton.style.display = 'block';
+            }
+        }
+        
+        // 初始化音效（確保所有音效元素都設置了音量和事件監聽器）
+        function initSound() {
+            const sounds = [bgMusic, selectSound, matchCorrectSound, matchWrongSound, pairErrorSound];
+            sounds.forEach(sound => {
+                if (sound) sound.volume = 0.5;
+                else console.warn('Missing sound element:', sound);
+            });
+
+            if (bgMusic) bgMusic.volume = 0.3;
+            if (matchCorrectSound) matchCorrectSound.volume = 0.6;
+            if (matchWrongSound) matchWrongSound.volume = 0.6;
+            if (pairErrorSound) pairErrorSound.volume = 0.4;
+
+
+            if (soundToggle) {
+                soundToggle.removeEventListener('click', toggleSound);
+                soundToggle.addEventListener('click', toggleSound);
+            }
+            document.removeEventListener('click', autoPlayBgMusicOnce);
+            document.addEventListener('click', autoPlayBgMusicOnce, { once: true });
+        }
+
+        // 啟動遊戲
+        window.onload = initGame;
+    </script>
+</body>
+</html>
