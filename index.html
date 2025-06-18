@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDGs RPG - 和平、正義及健全制度</title>
+    <style>
+        /* 全局樣式 */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #0a0a1a;
+            color: #fff;
+            overflow: hidden;
+            image-rendering: pixelated;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        }
+        
+        /* 標題欄 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center; /* 垂直居中對齊項目 */
+            padding: 15px;
+            background-color: #16213e;
+            border-bottom: 4px solid #0f3460;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 400;
+            width: 90%; /* 響應式寬度 */
+            max-width: 960px; /* 最大寬度 */
+            box-sizing: border-box;
+            background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            flex-wrap: wrap; /* 允許換行以適應小螢幕 */
+            gap: 10px; /* 項目之間的間距 */
+        }
+
+        .game-title {
+            font-size: 20px;
+            color: #e94560;
+            text-shadow: 2px 2px 0 #000;
+            flex-grow: 1; /* 讓標題佔據更多空間 */
+            text-align: left; /* 標題左對齊 */
+        }
+
+        .header-info { /* 新增的容器，用於包裹分數和音效按鈕 */
+            display: flex;
+            align-items: center;
+            gap: 20px; /* 分數和按鈕之間的間距 */
+            flex-wrap: wrap;
+            justify-content: flex-end; /* 資訊靠右對齊 */
+        }
+
+        .score {
+            font-size: 18px;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        #game-container {
+            position: relative;
+            width: 90%; /* 響應式寬度 */
+            max-width: 960px; /* 最大寬度 */
+            height: 60vh; /* 響應式高度 */
+            min-height: 400px; /* 最小高度 */
+            background-color: #0f3460;
+            border: 4px solid #533483;
+            box-shadow: 0 0 0 8px #0f3460, 0 0 0 12px #533483;
+            overflow: hidden; /* 確保角色不會超出邊界 */
+            image-rendering: pixelated;
+            margin-top: 20px;
+            display: flex; /* 確保內部元素可以居中 */
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 遊戲元素 */
+        .player {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background-color: #4CAF50; /* 玩家角色顏色 */
+            border: 2px solid #388E3C;
+            z-index: 100;
+            image-rendering: pixelated;
+            transition: transform 0.1s linear; /* 平滑移動 */
+            box-shadow: 2px 2px 0 #000;
+        }
+
+        .enemy {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background-color: #e94560; /* 敵人顏色 */
+            border: 2px solid #C62828;
+            z-index: 50;
+            image-rendering: pixelated;
+            box-shadow: 2px 2px 0 #000;
+            cursor: pointer;
+        }
+
+        /* 對話框和問題 */
+        .dialog-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #16213e;
+            border: 4px solid #0f3460;
+            box-shadow: 0 0 0 8px #0f3460, 0 0 0 12px #533483;
+            padding: 25px;
+            text-align: center;
+            z-index: 200;
+            width: 80%;
+            max-width: 500px;
+            box-sizing: border-box;
+        }
+
+        .question {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .options button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background-color: #533483;
+            color: #fff;
+            border: 2px solid #0f3460;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 #000;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .options button:hover {
+            background-color: #6a4c9c;
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 #000;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .correct {
+            color: #4CAF50;
+        }
+
+        .wrong {
+            color: #e94560;
+        }
+
+        .continue-button {
+            padding: 10px 20px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            background-color: #e94560;
+            color: white;
+            border: 3px solid #fff;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 4px 4px 0 #000;
+        }
+
+        /* 新增的簡潔說明畫面樣式 */
+        .instruction-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(22, 33, 62, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 500;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        
+        .instruction-title {
+            font-size: 24px;
+            color: #e94560;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 0 #000;
+            padding: 10px 20px;
+            border-bottom: 3px solid #e94560;
+        }
+        
+        .instruction-content {
+            max-width: 600px;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            border: 2px solid #0f3460;
+            padding: 20px;
+            background-color: rgba(15, 52, 96, 0.5);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .instruction-key {
+            background-color: #533483;
+            padding: 5px 8px;
+            border-radius: 4px;
+            color: #FFD700;
+            border: 1px solid #6a4c9c;
+            box-shadow: 2px 2px 0 #000;
+            display: inline-block;
+            margin: 0 5px;
+        }
+
+        /* 遊戲結束/勝利畫面 */
+        .result-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(22, 33, 62, 0.95);
+            display: none; /* 預設隱藏 */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 600;
+            text-align: center;
+        }
+
+        .result-message {
+            font-size: 20px;
+            color: #FFD700;
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 0 #000;
+            max-width: 80%;
+        }
+
+        .result-screen button {
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            background-color: #e94560;
+            color: white;
+            border: 3px solid #fff;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 5px 5px 0 #000;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        .result-screen button:hover {
+            background-color: #ff6b81;
+            transform: translate(-2px, -2px);
+            box-shadow: 7px 7px 0 #000;
+        }
+
+        .sound-toggle-button {
+            /* 移除絕對定位，讓其在header內正常排列 */
+            padding: 8px 12px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            background-color: #533483;
+            color: #fff;
+            border: 2px solid #0f3460;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 #000;
+            /* z-index 不再需要這麼高，因為在header內 */
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景音樂 -->
+    <audio id="bgMusic" loop>
+        <source src="indexMusic.mp3" type="audio/mpeg">
+        您的瀏覽器不支援音頻元素。
+    </audio>
+    <!-- 玩家移動音效 -->
+    <audio id="walkSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-block-toy-thud-2778.mp3" type="audio/mpeg">
+    </audio>
+    <!-- 答對音效 -->
+    <audio id="correctSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-in-a-video-game-2045.mp3" type="audio/mpeg">
+    </audio>
+    <!-- 答錯音效 -->
+    <audio id="wrongSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-in-a-video-game-2046.mp3" type="audio/mpeg">
+    </audio>
+    <!-- 敵人互動音效 -->
+    <audio id="enemySound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-small-hit-3066.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="header">
+        <div class="game-title">SDGs 和平、正義及健全制度</div>
+        <div class="header-info">
+            <div class="score">答對題數: <span id="score">0</span>/7</div>
+            <button class="sound-toggle-button" id="sound-toggle">音效: 開</button>
+        </div>
+    </div>
+    
+    <div id="game-container">
+        <!-- 簡潔說明畫面 -->
+        <div class="instruction-screen" id="instruction-screen">
+            <div class="instruction-title">第一關：和平與正義挑戰</div>
+            <div class="instruction-content">
+                <p><span class="instruction-key">↑↓←→</span> 移動角色接近敵人</p>
+                <p><span class="instruction-key">點擊敵人</span> 回答SDG16相關問題</p>
+                <p>答對<span class="instruction-key">5題</span>即可通關</p>
+                <p style="margin-top:15px;color:#FFD700;">目標：了解和平社會與健全制度的重要性</p>
+            </div>
+            <button class="continue-button" id="continue-button">開始挑戰</button>
+        </div>
+        
+        <!-- 遊戲元素將在這裡動態加載 -->
+        <div class="player" id="player"></div>
+    </div>
+
+    <!-- 結果畫面 -->
+    <div class="result-screen" id="result-screen">
+        <div class="result-message" id="result-message"></div>
+        <button id="next-button" style="display: none;" onclick="window.location.href='level2.html'">前往下一關</button>
+        <button id="retry-button" style="display: none;" onclick="window.location.reload()">重新挑戰</button>
+    </div>
+
+    <!-- 對話框 -->
+    <div class="dialog-box" id="dialog-box" style="display: none;">
+        <p class="question" id="question-text"></p>
+        <div class="options" id="options-container"></div>
+        <p class="feedback" id="feedback-text"></p>
+    </div>
+
+    <script>
+        // 遊戲狀態
+        const gameState = {
+            score: 0,
+            questionIndex: 0,
+            correctAnswersNeeded: 5,
+            player: { x: 0, y: 0 },
+            enemies: [],
+            currentEnemy: null,
+            dialogVisible: false,
+            soundEnabled: true,
+            questions: [
+                {
+                    question: "SDG16的目標是促進和平與包容的社會，請問以下哪項不屬於其關注範疇？",
+                    options: [
+                        { text: "減少一切形式的暴力", correct: false },
+                        { text: "加強法治，促進人權", correct: false },
+                        { text: "確保公共問責和透明度", correct: false },
+                        { text: "促進全球經濟增長", correct: true }
+                    ]
+                },
+                {
+                    question: "在SDG16中，建立有效、負責和包容的機構對於實現和平社會至關重要。以下哪種行為有助於實現這一目標？",
+                    options: [
+                        { text: "實施腐敗行為", correct: false },
+                        { text: "政府資訊不透明", correct: false },
+                        { text: "公民積極參與公共事務", correct: true },
+                        { text: "限制新聞自由", correct: false }
+                    ]
+                },
+                {
+                    question: "為了實現SDG16中的正義，以下哪項是關鍵的要素？",
+                    options: [
+                        { text: "確保所有人的司法近用權", correct: true },
+                        { text: "增加軍事開支", correct: false },
+                        { text: "實行言論審查", correct: false },
+                        { text: "鼓勵地下經濟", correct: false }
+                    ]
+                },
+                {
+                    question: "SDG16強調減少非法資金流動和軍火交易。請問，這對全球和平與安全有何影響？",
+                    options: [
+                        { text: "增加衝突風險", correct: false },
+                        { text: "破壞國家穩定", correct: false },
+                        { text: "有助於建立更穩定的國際秩序", correct: true },
+                        { text: "促進恐怖主義", correct: false }
+                    ]
+                },
+                {
+                    question: "為響應SDG16，公民社會組織應扮演什麼角色？",
+                    options: [
+                        { text: "保持沉默，不干預政治", correct: false },
+                        { text: "監督政府運作，倡導政策改革", correct: true },
+                        { text: "獨佔公共資源", correct: false },
+                        { text: "煽動社會對立", correct: false }
+                    ]
+                },
+                {
+                    question: "SDG16旨在保護基本自由。請問，以下哪項基本自由最能促進社會的健全發展？",
+                    options: [
+                        { text: "任意逮捕和拘禁的自由", correct: false },
+                        { text: "言論自由和資訊近用權", correct: true },
+                        { text: "結社和集會的自由", correct: false },
+                        { text: "擁有武器的自由", correct: false }
+                    ]
+                },
+                {
+                    question: "SDG16強調包容性決策。請問，這意味著什麼？",
+                    options: [
+                        { text: "只有精英才能參與決策", correct: false },
+                        { text: "決策過程應納入所有相關群體，特別是弱勢群體", correct: true },
+                        { text: "決策應由國際組織單方面決定", correct: false },
+                        { text: "決策應優先考慮經濟利益", correct: false }
+                    ]
+                }
+            ].sort(() => Math.random() - 0.5) // 打亂問題順序
+        };
+
+        const player = document.getElementById('player');
+        const gameContainer = document.getElementById('game-container');
+        const dialogBox = document.getElementById('dialog-box');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackText = document.getElementById('feedback-text');
+        const scoreDisplay = document.getElementById('score');
+        const instructionScreen = document.getElementById('instruction-screen');
+        const continueButton = document.getElementById('continue-button');
+        const resultScreen = document.getElementById('result-screen');
+        const resultMessage = document.getElementById('result-message');
+        const nextButton = document.getElementById('next-button');
+        const retryButton = document.getElementById('retry-button');
+
+        let soundEnabled = true;
+
+        // 監聽鍵盤事件
+        document.addEventListener('keydown', handleKeyDown);
+
+        // 初始化遊戲
+        function initGame() {
+            instructionScreen.style.display = 'flex'; // 顯示說明畫面
+
+            continueButton.addEventListener('click', () => {
+                instructionScreen.style.display = 'none'; // 隱藏說明畫面
+                setupGameArea(); // 設定遊戲區域
+                spawnEnemies(); // 生成敵人
+                initSound(); // 初始化音效
+                // 嘗試播放背景音樂
+                if (soundEnabled) {
+                    const bgMusic = document.getElementById('bgMusic');
+                    bgMusic.play().catch(e => console.log('Autoplay prevented:', e));
+                }
+            });
+        }
+
+        // 設定遊戲區域
+        function setupGameArea() {
+            const containerWidth = gameContainer.offsetWidth;
+            const containerHeight = gameContainer.offsetHeight;
+            gameState.player.x = containerWidth / 2 - player.offsetWidth / 2;
+            gameState.player.y = containerHeight / 2 - player.offsetHeight / 2;
+            updatePlayerPosition();
+        }
+
+        // 更新玩家位置
+        function updatePlayerPosition() {
+            player.style.left = `${gameState.player.x}px`;
+            player.style.top = `${gameState.player.y}px`;
+        }
+
+        // 處理鍵盤事件
+        function handleKeyDown(e) {
+            if (gameState.dialogVisible) return; // 對話框顯示時不能移動
+
+            const playerSpeed = 10;
+            const containerWidth = gameContainer.offsetWidth;
+            const containerHeight = gameContainer.offsetHeight;
+            const playerWidth = player.offsetWidth;
+            const playerHeight = player.offsetHeight;
+
+            let moved = false;
+
+            switch (e.key) {
+                case 'ArrowUp':
+                    gameState.player.y = Math.max(0, gameState.player.y - playerSpeed);
+                    moved = true;
+                    break;
+                case 'ArrowDown':
+                    gameState.player.y = Math.min(containerHeight - playerHeight, gameState.player.y + playerSpeed);
+                    moved = true;
+                    break;
+                case 'ArrowLeft':
+                    gameState.player.x = Math.max(0, gameState.player.x - playerSpeed);
+                    moved = true;
+                    break;
+                case 'ArrowRight':
+                    gameState.player.x = Math.min(containerWidth - playerWidth, gameState.player.x + playerSpeed);
+                    moved = true;
+                    break;
+            }
+
+            if (moved) {
+                updatePlayerPosition();
+                playWalkSound();
+                checkEnemyCollision();
+            }
+        }
+
+        // 播放走路音效
+        function playWalkSound() {
+            if (gameState.soundEnabled) {
+                const walkSound = document.getElementById('walkSound');
+                walkSound.currentTime = 0; // 重置音效以便重複播放
+                walkSound.play().catch(e => console.log('Walk sound play prevented:', e));
+            }
+        }
+
+        // 生成敵人
+        function spawnEnemies() {
+            gameState.enemies = [];
+            const enemyCount = 7;
+            const minDistance = 100; // 確保敵人之間有足夠距離
+
+            for (let i = 0; i < enemyCount; i++) {
+                let newEnemy = null;
+                let collision = true;
+                while (collision) {
+                    newEnemy = {
+                        id: i,
+                        x: Math.random() * (gameContainer.offsetWidth - 32),
+                        y: Math.random() * (gameContainer.offsetHeight - 32),
+                        element: document.createElement('div')
+                    };
+
+                    collision = false;
+                    // 檢查與玩家的距離
+                    const dxPlayer = newEnemy.x - gameState.player.x;
+                    const dyPlayer = newEnemy.y - gameState.player.y;
+                    if (Math.sqrt(dxPlayer * dxPlayer + dyPlayer * dyPlayer) < minDistance) {
+                        collision = true;
+                        continue;
+                    }
+
+                    // 檢查與其他敵人的距離
+                    for (let j = 0; j < gameState.enemies.length; j++) {
+                        const existingEnemy = gameState.enemies[j];
+                        const dxEnemy = newEnemy.x - existingEnemy.x;
+                        const dyEnemy = newEnemy.y - existingEnemy.y;
+                        if (Math.sqrt(dxEnemy * dxEnemy + dyEnemy * dyEnemy) < minDistance) {
+                            collision = true;
+                            break;
+                        }
+                    }
+                }
+
+                newEnemy.element.className = 'enemy';
+                newEnemy.element.style.left = `${newEnemy.x}px`;
+                newEnemy.element.style.top = `${newEnemy.y}px`;
+                newEnemy.element.dataset.enemyId = i;
+                newEnemy.element.addEventListener('click', () => handleEnemyClick(newEnemy));
+                gameContainer.appendChild(newEnemy.element);
+                gameState.enemies.push(newEnemy);
+            }
+        }
+
+        // 檢查敵人碰撞
+        function checkEnemyCollision() {
+            const playerRect = player.getBoundingClientRect();
+            const gameRect = gameContainer.getBoundingClientRect();
+
+            gameState.enemies.forEach(enemy => {
+                if (enemy.element.style.display !== 'none') { // 只檢查顯示的敵人
+                    const enemyRect = enemy.element.getBoundingClientRect();
+                    
+                    // 將 Rect 轉換為相對於遊戲容器的座標
+                    const playerLeft = playerRect.left - gameRect.left;
+                    const playerTop = playerRect.top - gameRect.top;
+                    const enemyLeft = enemyRect.left - gameRect.left;
+                    const enemyTop = enemyRect.top - gameRect.top;
+
+                    // 簡易碰撞檢測
+                    if (playerLeft < enemyLeft + enemyRect.width &&
+                        playerLeft + playerRect.width > enemyLeft &&
+                        playerTop < enemyTop + enemyRect.height &&
+                        playerTop + playerRect.height > enemyTop) {
+                        
+                        handleEnemyClick(enemy);
+                    }
+                }
+            });
+        }
+
+        // 處理敵人點擊/碰撞
+        function handleEnemyClick(enemy) {
+            if (gameState.dialogVisible) return; // 避免重複觸發
+
+            gameState.currentEnemy = enemy;
+            showQuestion();
+            playEnemySound();
+        }
+
+        // 顯示問題
+        function showQuestion() {
+            gameState.dialogVisible = true;
+            dialogBox.style.display = 'block';
+
+            const currentQuestion = gameState.questions[gameState.questionIndex];
+            questionText.textContent = currentQuestion.question;
+
+            optionsContainer.innerHTML = '';
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option.text;
+                button.addEventListener('click', () => checkAnswer(option.correct, button));
+                optionsContainer.appendChild(button);
+            });
+
+            feedbackText.textContent = '';
+        }
+
+        // 檢查答案
+        function checkAnswer(isCorrect, clickedButton) {
+            // 禁用所有按鈕防止重複點擊
+            Array.from(optionsContainer.children).forEach(button => button.disabled = true);
+
+            if (isCorrect) {
+                feedbackText.textContent = '答對了！';
+                feedbackText.className = 'feedback correct';
+                gameState.score++;
+                scoreDisplay.textContent = gameState.score;
+                playCorrectSound();
+                // 移除被答對的敵人
+                if (gameState.currentEnemy && gameState.currentEnemy.element) {
+                    gameState.currentEnemy.element.style.display = 'none'; // 隱藏敵人
+                    // 從敵人列表中移除，防止再次互動
+                    gameState.enemies = gameState.enemies.filter(e => e.id !== gameState.currentEnemy.id);
+                }
+            } else {
+                feedbackText.textContent = '答錯了！';
+                feedbackText.className = 'feedback wrong';
+                playWrongSound();
+            }
+
+            setTimeout(() => {
+                dialogBox.style.display = 'none';
+                gameState.dialogVisible = false;
+                gameState.questionIndex++;
+
+                if (gameState.score >= gameState.correctAnswersNeeded) {
+                    endGame(true); // 勝利
+                } else if (gameState.questionIndex >= gameState.questions.length) {
+                    endGame(false); // 問題用盡但未達標
+                }
+            }, 1500); // 顯示回饋1.5秒
+        }
+
+        // 結束遊戲
+        function endGame(isVictory) {
+            resultScreen.style.display = 'flex';
+            if (isVictory) {
+                resultMessage.textContent = '恭喜！你成功回答了足夠的問題，可以前往下一關！';
+                nextButton.style.display = 'block';
+            } else {
+                resultMessage.textContent = '很可惜，問題用盡且未達到通關標準，請重新挑戰！';
+                retryButton.style.display = 'block';
+            }
+        }
+
+        // 初始化音效
+        function initSound() {
+            const bgMusic = document.getElementById('bgMusic');
+            const walkSound = document.getElementById('walkSound');
+            const correctSound = document.getElementById('correctSound');
+            const wrongSound = document.getElementById('wrongSound');
+            const enemySound = document.getElementById('enemySound');
+            
+            bgMusic.volume = 0.3;
+            walkSound.volume = 0.2;
+            correctSound.volume = 0.5;
+            wrongSound.volume = 0.5;
+            enemySound.volume = 0.4;
+            
+            // 音效切換按鈕
+            const soundToggle = document.getElementById('sound-toggle');
+            soundToggle.addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                soundToggle.textContent = `音效: ${soundEnabled ? '開' : '關'}`;
+                
+                if (soundEnabled) {
+                    bgMusic.play().catch(e => console.log('Autoplay prevented:', e));
+                } else {
+                    bgMusic.pause();
+                }
+            });
+            
+            // 嘗試播放背景音樂（需要用戶交互後才能自動播放）
+            document.addEventListener('click', () => {
+                if (soundEnabled) {
+                    bgMusic.play().catch(e => console.log('Autoplay prevented:', e));
+                }
+            }, { once: true });
+        }
+
+        // 播放正確音效
+        function playCorrectSound() {
+            if (gameState.soundEnabled) {
+                const correctSound = document.getElementById('correctSound');
+                correctSound.currentTime = 0;
+                correctSound.play().catch(e => console.log('Correct sound play prevented:', e));
+            }
+        }
+
+        // 播放錯誤音效
+        function playWrongSound() {
+            if (gameState.soundEnabled) {
+                const wrongSound = document.getElementById('wrongSound');
+                wrongSound.currentTime = 0;
+                wrongSound.play().catch(e => console.log('Wrong sound play prevented:', e));
+            }
+        }
+
+        // 播放敵人互動音效
+        function playEnemySound() {
+            if (gameState.soundEnabled) {
+                const enemySound = document.getElementById('enemySound');
+                enemySound.currentTime = 0;
+                enemySound.play().catch(e => console.log('Enemy sound play prevented:', e));
+            }
+        }
+        
+        // 啟動遊戲
+        window.onload = initGame;
+    </script>
+</body>
+</html>
